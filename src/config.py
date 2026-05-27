@@ -23,11 +23,21 @@ ORBIS_IGNORED_SHEET = "Search summary"
 UNNAMED_LEADING_COLUMN = "Unnamed: 0"
 
 COMPANY_NAME_COLUMN = "Company name Latin alphabet"
-COUNTRY_COLUMN = "Country ISO code"
-NACE_COLUMN = "NACE Rev. 2 main section"
+COUNTRY_COLUMN = "Country"
+NACE_COLUMN = "NACE Rev. 2, core code (4 digits)"
 INDEPENDENCE_COLUMN = "Independence indicator"
 GUO_COLUMN = "Global Ultimate Owner"
 LATEST_REVENUE_COLUMN = "Sales th EUR Last avail. yr"
+LATEST_EMPLOYEES_COLUMN = "Number of employees Last avail. yr"
+
+NACE_DESCRIPTIONS = {
+    "4646": "Wholesale of pharmaceutical goods",
+}
+
+TESTED_PARTY_CHARACTERIZATION = (
+    "Tested party characterization: Limited-Risk Distributor with Sales and "
+    "Marketing functions (LRD-SM)"
+)
 
 YEAR_SUFFIXES = (
     "Last avail. yr",

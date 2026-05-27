@@ -51,7 +51,6 @@ def _overview_page() -> None:
     """Render the overview page."""
 
     st.header("Overview")
-    st.write("Hello World")
 
     if not config.TESTED_PARTY_PATH.exists():
         _show_missing_data_message()
@@ -69,13 +68,16 @@ def _overview_page() -> None:
 
     row = tested_party.iloc[0]
     latest_revenue = row.get(config.LATEST_REVENUE_COLUMN, pd.NA)
+    latest_employees = row.get(config.LATEST_EMPLOYEES_COLUMN, pd.NA)
     st.subheader(str(row.get(config.COMPANY_NAME_COLUMN, "Tested party")))
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Country", _display_value(row.get(config.COUNTRY_COLUMN)))
-    col2.metric("NACE", _display_value(row.get(config.NACE_COLUMN)))
-    col3.metric("Latest revenue", _format_number(latest_revenue))
-    col4.metric("Rows loaded", f"{len(tested_party):,}")
+    col2.metric("NACE", _format_nace(row.get(config.NACE_COLUMN)))
+    col3.metric("Latest revenue", _format_revenue_millions(latest_revenue))
+    col4.metric("Employees (latest)", _format_number(latest_employees))
+
+    st.write(config.TESTED_PARTY_CHARACTERIZATION)
 
 
 def _comparables_page() -> None:
@@ -141,6 +143,33 @@ def _format_number(value: object) -> str:
         return f"{float(value):,.0f}"
     except (TypeError, ValueError):
         return str(value)
+
+
+def _format_revenue_millions(value: object) -> str:
+    """Format a thousand-EUR value as EUR millions."""
+
+    if pd.isna(value):
+        return "n/a"
+    try:
+        return f"€{float(value) / 1_000:,.0f}M"
+    except (TypeError, ValueError):
+        return str(value)
+
+
+def _format_nace(value: object) -> str:
+    """Format a NACE core code with its configured description."""
+
+    if pd.isna(value):
+        return "n/a"
+    try:
+        code = f"{int(float(value)):04d}"
+    except (TypeError, ValueError):
+        code = str(value).strip()
+
+    description = config.NACE_DESCRIPTIONS.get(code)
+    if description is None:
+        return code
+    return f"{code} - {description}"
 
 
 if __name__ == "__main__":
