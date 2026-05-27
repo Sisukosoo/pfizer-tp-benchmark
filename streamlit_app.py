@@ -19,8 +19,19 @@ from src.comparables import (
     save_decisions,
 )
 from src.data_loader import load_comparables, load_tested_party
-from src.sensitivity import run_all_scenarios, scenario_summary_frame
-from src.visualizations import arms_length_plot
+from src.pli_calculator import operating_margin
+from src.sensitivity import (
+    normalize_pfizer_fy22_ebit,
+    run_all_scenarios,
+    scenario_summary_frame,
+)
+from src.visualizations import (
+    arms_length_plot,
+    revenue_vs_margin_scatter,
+    sensitivity_range_plot,
+    sorted_comparables_bar,
+    tested_party_trend_plot,
+)
 
 st.set_page_config(
     page_title="Pfizer TP Benchmark",
@@ -244,14 +255,18 @@ def _analysis_page() -> None:
         years=config.DEFAULT_BENCHMARK_PERIOD,
     )
 
-    base_tab, sensitivity_tab, methodology_tab, detail_tab = st.tabs(
+    dashboard_tab, base_tab, sensitivity_tab, methodology_tab, detail_tab = st.tabs(
         [
+            "Executive Dashboard",
             "Base Case",
             "Sensitivity",
             "Methodology",
             "Comparables PLI detail",
         ]
     )
+
+    with dashboard_tab:
+        _render_executive_dashboard(tested_party, accepted_comparables, base_result)
 
     with base_tab:
         _render_base_case(base_result)
@@ -274,6 +289,70 @@ def _analysis_inputs() -> tuple[pd.DataFrame, pd.DataFrame]:
     decisions = load_decisions()
     accepted_comparables = get_accepted(raw_comparables, decisions)
     return tested_party, accepted_comparables
+
+
+def _render_executive_dashboard(
+    tested_party: pd.DataFrame,
+    accepted_comparables: pd.DataFrame,
+    base_result: dict[str, object],
+) -> None:
+    """Render the executive analytics dashboard."""
+
+    st.subheader("Executive Analytics Dashboard")
+    st.write(
+        "These visuals connect the FAR memo, rejection cascade, and TNMM result: "
+        "Pfizer's own margin trend, the accepted comparable ranking, sensitivity "
+        "ranges, and the size mismatch between Pfizer and the accepted pool."
+    )
+
+    trend_col, bar_col = st.columns(2)
+    with trend_col:
+        st.plotly_chart(
+            tested_party_trend_plot(
+                _tested_party_trend_series(tested_party),
+                adjusted_points=_tested_party_adjusted_points(tested_party),
+                title="Pfizer Operating Margin Trend (FY2020-FY2024)",
+            ),
+            use_container_width=True,
+        )
+    with bar_col:
+        st.plotly_chart(
+            sorted_comparables_bar(
+                base_result["comparables_detail"],
+                float(base_result["tested_pli"]),
+                base_result["range"],
+            ),
+            use_container_width=True,
+        )
+
+    sensitivity_summary = scenario_summary_frame(
+        run_all_scenarios(
+            tested_party_df=tested_party,
+            comparables_df=accepted_comparables,
+            include_fy22_adjustment=True,
+        )
+    )
+    st.plotly_chart(
+        sensitivity_range_plot(sensitivity_summary),
+        use_container_width=True,
+    )
+
+    tested_revenue = pd.to_numeric(
+        tested_party.iloc[0].get(config.LATEST_REVENUE_COLUMN),
+        errors="coerce",
+    )
+    st.plotly_chart(
+        revenue_vs_margin_scatter(
+            base_result["comparables_detail"],
+            float(tested_revenue),
+            float(base_result["tested_pli"]),
+        ),
+        use_container_width=True,
+    )
+    st.caption(
+        "The revenue scatter is intentionally included as a limitation exhibit: "
+        "Pfizer is materially larger than the accepted comparable pool."
+    )
 
 
 def _render_base_case(result: dict[str, object]) -> None:
@@ -384,6 +463,28 @@ def _render_pli_detail(result: dict[str, object]) -> None:
     for _, row in display.iterrows():
         with st.expander(str(row[config.COMPANY_NAME_COLUMN])):
             st.write(row.to_frame(name="Value"))
+
+
+def _tested_party_trend_series(tested_party: pd.DataFrame) -> pd.Series:
+    """Return Pfizer yearly Operating Margin in chronological order."""
+
+    values = {}
+    for year_suffix in reversed(config.YEAR_SUFFIXES):
+        label = config.PERIOD_LABELS[year_suffix]
+        values[label] = operating_margin(tested_party, year_suffix).iloc[0]
+    return pd.Series(values)
+
+
+def _tested_party_adjusted_points(tested_party: pd.DataFrame) -> dict[str, float]:
+    """Return the FY22 restructuring-adjusted Operating Margin point."""
+
+    adjusted = normalize_pfizer_fy22_ebit(tested_party)
+    fy22_suffix = "Year - 2"
+    return {
+        config.PERIOD_LABELS[fy22_suffix]: float(
+            operating_margin(adjusted, fy22_suffix).iloc[0]
+        )
+    }
 
 
 def _range_summary_frame(
