@@ -49,7 +49,7 @@ def test_sorted_comparables_bar_adds_pfizer_reference_line(
     )
 
     assert len(figure.data) == 1
-    assert len(figure.layout.shapes) == 4
+    assert len(figure.layout.shapes) == 5
 
 
 def test_sensitivity_range_plot_builds_scenario_markers() -> None:

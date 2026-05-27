@@ -221,50 +221,117 @@ def sorted_comparables_bar(
     display = comparables_detail.dropna(subset=["weighted_pli"]).copy()
     display = display.sort_values("weighted_pli", ascending=True)
     values = display["weighted_pli"] * 100
+    q1 = float(range_dict["q1"]) * 100
+    q3 = float(range_dict["q3"]) * 100
+    tested_value = tested_pli * 100
+    display["chart_name"] = display[config.COMPANY_NAME_COLUMN].apply(
+        _short_company_name
+    )
+    display["iqr_status"] = display["weighted_pli"].between(
+        float(range_dict["q1"]),
+        float(range_dict["q3"]),
+        inclusive="both",
+    )
     colors = [
-        (
-            "#16A34A"
-            if float(range_dict["q1"]) <= value <= float(range_dict["q3"])
-            else "#94A3B8"
-        )
-        for value in display["weighted_pli"]
+        "#16A34A" if is_inside else "#94A3B8" for is_inside in display["iqr_status"]
     ]
 
     figure = go.Figure()
+    figure.add_vrect(
+        x0=q1,
+        x1=q3,
+        fillcolor="#16A34A",
+        opacity=0.12,
+        layer="below",
+        line_width=0,
+    )
     figure.add_trace(
         go.Bar(
             x=values,
-            y=display[config.COMPANY_NAME_COLUMN],
+            y=display["chart_name"],
             orientation="h",
             marker={"color": colors},
             name="Accepted comparables",
-            hovertemplate="%{y}<br>Weighted OM: %{x:.2f}%<extra></extra>",
+            customdata=display[[config.COMPANY_NAME_COLUMN, "iqr_status"]].to_numpy(),
+            hovertemplate=(
+                "%{customdata[0]}<br>"
+                "Weighted OM: %{x:.2f}%<br>"
+                "Inside IQR: %{customdata[1]}<extra></extra>"
+            ),
         )
     )
     figure.add_vline(
-        x=tested_pli * 100,
+        x=tested_value,
         line_color="#DC2626",
         line_width=3,
-        annotation_text="Pfizer",
-        annotation_position="top",
     )
     for label, key in [("Q1", "q1"), ("Median", "median"), ("Q3", "q3")]:
+        value = float(range_dict[key]) * 100
         figure.add_vline(
-            x=float(range_dict[key]) * 100,
+            x=value,
             line_dash="dash",
             line_color="#0F766E",
-            annotation_text=label,
-            annotation_position="bottom",
+            line_width=2,
         )
+        figure.add_annotation(
+            x=value,
+            y=1.03,
+            xref="x",
+            yref="paper",
+            text=label,
+            showarrow=False,
+            font={"size": 12, "color": "#14B8A6"},
+            xanchor="center",
+        )
+    figure.add_annotation(
+        x=tested_value,
+        y=1.11,
+        xref="x",
+        yref="paper",
+        text="Pfizer",
+        showarrow=False,
+        font={"size": 12, "color": "#FFFFFF"},
+        xanchor="center",
+    )
+    axis_min = min(float(values.min()), q1, tested_value, 0) - 1
+    axis_max = max(float(values.max()), q3, tested_value, 0) + 1
     figure.update_layout(
         title=title,
         xaxis_title="Weighted Operating Margin (%)",
         yaxis_title="",
-        height=470,
-        margin={"l": 20, "r": 20, "t": 60, "b": 40},
+        height=max(520, 44 * len(display) + 160),
+        margin={"l": 170, "r": 30, "t": 90, "b": 65},
         showlegend=False,
+        bargap=0.28,
+    )
+    figure.update_xaxes(
+        range=[axis_min, axis_max],
+        zeroline=True,
+        zerolinecolor="rgba(255,255,255,0.35)",
+        gridcolor="rgba(255,255,255,0.12)",
     )
     return figure
+
+
+def _short_company_name(company_name: object, max_length: int = 30) -> str:
+    """Return a compact company label for charts."""
+
+    name = str(company_name)
+    replacements = {
+        "UFM - UNIONE FARMACEUTICA MITO S.R.L.": "UFM",
+        "PHARMAAND GMBH": "PHARMAAND",
+        "PHARMORE GMBH": "PHARMORE",
+        "ALCYON ITALIA S.P.A.": "ALCYON ITALIA",
+        "MICERIUM S.P.A.": "MICERIUM",
+        "CLUB SALUTE S.P.A.": "CLUB SALUTE",
+        "SAIMA S.P.A.": "SAIMA",
+        "AMEFA GMBH": "AMEFA",
+    }
+    if name in replacements:
+        return replacements[name]
+    if len(name) <= max_length:
+        return name
+    return f"{name[: max_length - 3].rstrip()}..."
 
 
 def sensitivity_range_plot(
