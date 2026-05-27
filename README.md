@@ -2,7 +2,7 @@
 
 Python + Streamlit portfolio project for a transfer pricing benchmarking study of Pfizer Pharma GmbH.
 
-This is a student learning project by **Sisu Kosoo, TU München**. I built it to study transfer pricing more deeply, practice modelling financial indicators used in transfer pricing, and learn how tools such as Moody's Orbis, Python, OpenAI Codex, Claude, and Excel can be combined in an applied finance/tax workflow.
+This is a student learning project by **Sisu Kosonen, TU München**. I built it to study transfer pricing more deeply, practice modelling financial indicators used in transfer pricing, and learn how tools such as Moody's Orbis, Python, OpenAI Codex, Claude, and Excel can be combined in an applied finance/tax workflow.
 
 The project is not a statutory transfer pricing report or professional tax opinion. It is a reproducible educational workpaper and portfolio case.
 
@@ -140,4 +140,4 @@ The project is intended to demonstrate learning, methodology, and analytical imp
 
 MIT License.
 
-Author: Sisu Kosoo, TU München. Year: 2026.
+Author: Sisu Kosonen, TU München. Year: 2026.

@@ -859,7 +859,7 @@ def _about_page_html() -> str:
       <div class="about-content">
         <div class="about-title">About</div>
         <p class="about-lede">
-          This is a student learning and portfolio project by Sisu Kosoo at TU
+          This is a student learning and portfolio project by Sisu Kosonen at TU
           München. It uses Pfizer Pharma GmbH as a realistic case to practice
           transfer pricing benchmarking, OECD TNMM logic, Orbis data handling,
           Python analytics, and Streamlit reporting.
