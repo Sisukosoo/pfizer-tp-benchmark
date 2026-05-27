@@ -20,6 +20,17 @@ from src.comparables import (
 )
 from src.data_loader import load_comparables, load_tested_party
 from src.pli_calculator import operating_margin
+from src.reporting import (
+    REPORT_FILENAME,
+    REPORT_MIME_TYPE,
+    accepted_comparables_frame,
+    build_excel_report,
+    build_report_context,
+    executive_conclusion,
+    overview_frame,
+    range_frame,
+    sensitivity_frame,
+)
 from src.sensitivity import (
     normalize_pfizer_fy22_ebit,
     run_all_scenarios,
@@ -66,6 +77,7 @@ def main() -> None:
         st.Page(_overview_page, title="Overview"),
         st.Page(_comparables_page, title="Comparables"),
         st.Page(_analysis_page, title="Analysis"),
+        st.Page(_report_page, title="Report"),
         st.Page(_about_page, title="About"),
     ]
     navigation = st.navigation(pages)
@@ -289,6 +301,75 @@ def _analysis_inputs() -> tuple[pd.DataFrame, pd.DataFrame]:
     decisions = load_decisions()
     accepted_comparables = get_accepted(raw_comparables, decisions)
     return tested_party, accepted_comparables
+
+
+def _report_page() -> None:
+    """Render the executive report and Excel export page."""
+
+    st.header("Report")
+    st.write(
+        "This page turns the current benchmark state into an interview-ready "
+        "executive summary and a downloadable Excel workpaper."
+    )
+
+    if not config.TESTED_PARTY_PATH.exists() or not config.COMPARABLES_PATH.exists():
+        _show_missing_data_message()
+        return
+
+    try:
+        tested_party = get_tested_party()
+        raw_comparables = get_comparables()
+        decisions = load_decisions()
+        context = build_report_context(tested_party, raw_comparables, decisions)
+    except (FileNotFoundError, ValueError) as error:
+        st.warning(str(error))
+        return
+
+    if context["accepted"].empty:
+        st.info("No accepted comparables available. Review the Comparables page first.")
+        return
+
+    result = context["base_result"]
+    range_dict = result["range"]
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Primary PLI", str(result["pli_label"]))
+    col2.metric(
+        "Pfizer OM", _format_pli_value(result["tested_pli"], result["pli_type"])
+    )
+    col3.metric("IQR", _format_iqr_label(range_dict, str(result["pli_type"])))
+    col4.metric("Conclusion", _position_label(result["position"]["position"]))
+
+    st.subheader("Executive conclusion")
+    st.markdown(executive_conclusion(context))
+
+    preview_tab, workpaper_tab = st.tabs(["Report preview", "Excel workpaper"])
+    with preview_tab:
+        st.dataframe(overview_frame(context), hide_index=True, use_container_width=True)
+        st.dataframe(range_frame(context), hide_index=True, use_container_width=True)
+        st.dataframe(
+            sensitivity_frame(context),
+            hide_index=True,
+            use_container_width=True,
+        )
+
+    with workpaper_tab:
+        st.write(
+            "The workbook contains the current tested-party overview, accepted "
+            "comparables, rejected candidates, PLI detail, range calculation, "
+            "sensitivity scenarios, and methodology notes."
+        )
+        st.download_button(
+            "Download Excel workpaper",
+            data=build_excel_report(tested_party, raw_comparables, decisions),
+            file_name=REPORT_FILENAME,
+            mime=REPORT_MIME_TYPE,
+        )
+
+        st.dataframe(
+            accepted_comparables_frame(context),
+            hide_index=True,
+            use_container_width=True,
+        )
 
 
 def _render_executive_dashboard(
@@ -650,6 +731,15 @@ def _format_pli_spread(value: object, pli_type: str) -> str:
     if config.PLI_PERCENT_FORMAT.get(pli_type, False):
         return f"{numeric_value * 100:.2f} pp"
     return f"{numeric_value:.2f}x"
+
+
+def _format_iqr_label(range_dict: dict[str, object], pli_type: str) -> str:
+    """Format Q1-Q3 as a compact Streamlit metric label."""
+
+    return (
+        f"{_format_pli_value(range_dict['q1'], pli_type)} - "
+        f"{_format_pli_value(range_dict['q3'], pli_type)}"
+    )
 
 
 def _position_label(position: str) -> str:

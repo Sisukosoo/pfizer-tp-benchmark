@@ -52,6 +52,8 @@ Rejection categories:
 
 The analytical core applies OECD TPG Chapter II Part III TNMM logic. Operating Margin, EBIT / Sales, is the primary PLI because Pfizer Pharma GmbH is characterized as a limited-risk distributor with sales and marketing functions. Berry Ratio is used as a secondary check, and ROCE is read from Orbis as an additional capital-return indicator. Multi-year PLIs are weighted as sum(numerator) / sum(denominator), rather than averaging yearly ratios, to reduce volatility from one-off years. The default period is FY22-FY24, using Orbis `Last avail. yr`, `Year - 1`, and `Year - 2`. The arm's-length range is the interquartile range of accepted comparable PLIs using linear quartiles. Sensitivity scenarios test period choice, PLI choice, outlier exclusions, Italian regional distributor exclusions, and Pfizer's FY22 restructuring normalization.
 
+The app also includes a Report page that generates an executive conclusion and a downloadable Excel workpaper. The workbook contains overview, accepted comparables, rejected candidates, PLI detail, arm's-length range, sensitivity scenarios, and methodology notes. Generated reports are excluded from Git because they are derived from confidential Orbis inputs.
+
 ## Project Structure
 
 ```text
@@ -65,6 +67,7 @@ pfizer-tp-benchmark/
 |   +-- pli_calculator.py
 |   +-- benchmarking.py
 |   +-- sensitivity.py
+|   +-- reporting.py
 |   +-- visualizations.py
 +-- tests/
 +-- data/

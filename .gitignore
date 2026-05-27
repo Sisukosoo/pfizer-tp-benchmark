@@ -5,6 +5,7 @@ data/processed/*.xlsx
 data/processed/*.csv
 output/reports/*.pdf
 output/reports/*.docx
+output/reports/*.xlsx
 output/figures/*.png
 
 venv/
