@@ -1,4 +1,4 @@
-# Methodology: Rejection Cascade
+# Methodology: TNMM Benchmarking Workflow
 
 This project benchmarks Pfizer Pharma GmbH as a tested party under the Transactional Net Margin Method (TNMM). The tested party is characterized as a Limited-Risk Distributor with Sales and Marketing functions (LRD-SM). The comparables workflow therefore seeks independent companies whose observed activity is broadly consistent with routine pharmaceutical distribution, while excluding entities with materially different functions, assets, risks, or product-market exposure.
 
@@ -17,6 +17,10 @@ The cascade excludes candidates in the following categories:
 - Low data quality: insufficient financial or business-description evidence to validate comparability.
 
 The baseline result is 10 accepted comparables, 45 rejected candidates, and 0 pending candidates. User edits in the Streamlit app support sensitivity scenarios without overwriting the immutable baseline logic. This follows the OECD Transfer Pricing Guidelines' emphasis on comparability analysis, including paragraph 3.24 on practical considerations where markets are narrow and perfect comparables are scarce.
+
+## App Workflow
+
+The Streamlit app presents the benchmarking study as a transparent workpaper rather than a black-box model. The Overview page identifies the tested party and summarizes the LRD-SM characterization. The Comparables page documents the rejection cascade from the raw Orbis population to the accepted comparable pool. The Analysis page then links the methodology to the quantitative result through an executive dashboard, base-case arm's-length range, sensitivity scenarios, and comparable-level PLI detail. The Report page converts the current benchmark state into an executive conclusion and downloadable Excel workpaper.
 
 ## PLI Selection
 
@@ -37,3 +41,7 @@ The arm's-length range is constructed as the interquartile range of the accepted
 The sensitivity tab tests period choice, PLI choice, outlier exclusions, exclusion of Italian regional distributors, and an optional Pfizer FY22 EBIT normalization for the EUR 71.9M restructuring charge described in the FAR memo. These scenarios are not separate conclusions; they are diagnostic checks on the robustness of the base case.
 
 The current comparable pool is methodologically useful but not perfect. Pfizer Pharma GmbH is materially larger than the median comparable, and independent multinational pharmaceutical distributors are scarce in Europe. Several accepted comparables are Italian regional distributors, which may have lower margins than manufacturer-side distributors. The app therefore presents the result as a transparent TNMM benchmark with explicit limitations rather than as a mechanically definitive arm's-length conclusion.
+
+## Reporting Output
+
+The Excel workpaper is a presentation layer over the same calculation engine used in the app. It includes the tested-party overview, accepted comparables, rejected candidates, PLI detail, arm's-length range, sensitivity scenarios, and methodology notes. The report should be read as a reproducible portfolio workpaper based on the available Orbis export, not as a statutory transfer pricing report.
