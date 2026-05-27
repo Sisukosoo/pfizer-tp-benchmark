@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from io import BytesIO
 from pathlib import Path
+from zipfile import ZIP_DEFLATED, ZipFile
 
 import pandas as pd
 
@@ -50,13 +52,7 @@ def load_orbis_export(path: Path | str) -> pd.DataFrame:
     if not export_path.exists():
         raise FileNotFoundError(f"Orbis export not found: {export_path}")
 
-    dataframe = pd.read_excel(
-        export_path,
-        sheet_name=config.ORBIS_RESULTS_SHEET,
-        header=0,
-        na_values=config.MISSING_VALUE_TOKENS,
-        keep_default_na=True,
-    )
+    dataframe = _read_results_sheet(export_path)
 
     if config.UNNAMED_LEADING_COLUMN in dataframe.columns:
         dataframe = dataframe.drop(columns=[config.UNNAMED_LEADING_COLUMN])
@@ -200,6 +196,55 @@ def map_year_suffixes(
     for offset, suffix in enumerate(suffixes):
         mapping[suffix] = latest_fiscal_year - offset
     return mapping
+
+
+def _read_results_sheet(export_path: Path) -> pd.DataFrame:
+    """Read the Orbis Results sheet, repairing known workbook quirks if needed."""
+
+    try:
+        return pd.read_excel(
+            export_path,
+            sheet_name=config.ORBIS_RESULTS_SHEET,
+            header=0,
+            na_values=config.MISSING_VALUE_TOKENS,
+            keep_default_na=True,
+        )
+    except TypeError as error:
+        if "applyNumFmt" not in str(error):
+            raise
+        logger.warning(
+            "Repairing unsupported Orbis workbook style attribute in %s",
+            export_path.name,
+        )
+        return pd.read_excel(
+            _repair_openpyxl_style_alias(export_path),
+            sheet_name=config.ORBIS_RESULTS_SHEET,
+            header=0,
+            na_values=config.MISSING_VALUE_TOKENS,
+            keep_default_na=True,
+        )
+
+
+def _repair_openpyxl_style_alias(export_path: Path) -> BytesIO:
+    """Return an in-memory workbook with `applyNumFmt` normalized for openpyxl."""
+
+    repaired_workbook = BytesIO()
+    with (
+        ZipFile(export_path) as source,
+        ZipFile(
+            repaired_workbook,
+            mode="w",
+            compression=ZIP_DEFLATED,
+        ) as target,
+    ):
+        for item in source.infolist():
+            content = source.read(item.filename)
+            if item.filename == "xl/styles.xml":
+                content = content.replace(b"applyNumFmt=", b"applyNumberFormat=")
+            target.writestr(item, content)
+
+    repaired_workbook.seek(0)
+    return repaired_workbook
 
 
 def _coerce_numeric_columns(dataframe: pd.DataFrame) -> pd.DataFrame:

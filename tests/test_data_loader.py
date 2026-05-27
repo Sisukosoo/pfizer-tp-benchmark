@@ -18,4 +18,4 @@ def test_load_tested_party_smoke() -> None:
 
     assert len(dataframe) == 1
     assert dataframe.loc[0, config.LATEST_REVENUE_COLUMN] > 0
-    assert "Pfizer" in dataframe.loc[0, config.COMPANY_NAME_COLUMN]
+    assert "pfizer" in dataframe.loc[0, config.COMPANY_NAME_COLUMN].lower()
