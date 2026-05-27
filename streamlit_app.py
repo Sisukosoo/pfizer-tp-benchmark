@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from src import config
+from src.benchmarking import run_benchmark
 from src.comparables import (
     compute_cascade_stats,
     get_accepted,
@@ -18,6 +19,8 @@ from src.comparables import (
     save_decisions,
 )
 from src.data_loader import load_comparables, load_tested_party
+from src.sensitivity import run_all_scenarios, scenario_summary_frame
+from src.visualizations import arms_length_plot
 
 st.set_page_config(
     page_title="Pfizer TP Benchmark",
@@ -216,10 +219,248 @@ def _comparables_page() -> None:
 
 
 def _analysis_page() -> None:
-    """Render the analysis placeholder page."""
+    """Render the arm's-length range analysis page."""
 
     st.header("Analysis")
-    st.info("Coming soon")
+
+    if not config.TESTED_PARTY_PATH.exists() or not config.COMPARABLES_PATH.exists():
+        _show_missing_data_message()
+        return
+
+    try:
+        tested_party, accepted_comparables = _analysis_inputs()
+    except (FileNotFoundError, ValueError) as error:
+        st.warning(str(error))
+        return
+
+    if accepted_comparables.empty:
+        st.info("No accepted comparables available. Review the Comparables page first.")
+        return
+
+    base_result = run_benchmark(
+        tested_party_df=tested_party,
+        comparables_df=accepted_comparables,
+        pli_type=config.PLI_OPERATING_MARGIN,
+        years=config.DEFAULT_BENCHMARK_PERIOD,
+    )
+
+    base_tab, sensitivity_tab, methodology_tab, detail_tab = st.tabs(
+        [
+            "Base Case",
+            "Sensitivity",
+            "Methodology",
+            "Comparables PLI detail",
+        ]
+    )
+
+    with base_tab:
+        _render_base_case(base_result)
+
+    with sensitivity_tab:
+        _render_sensitivity(tested_party, accepted_comparables, base_result)
+
+    with methodology_tab:
+        st.markdown(_methodology_text())
+
+    with detail_tab:
+        _render_pli_detail(base_result)
+
+
+def _analysis_inputs() -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Load tested party and accepted comparables for analysis."""
+
+    tested_party = get_tested_party()
+    raw_comparables = get_comparables()
+    decisions = load_decisions()
+    accepted_comparables = get_accepted(raw_comparables, decisions)
+    return tested_party, accepted_comparables
+
+
+def _render_base_case(result: dict[str, object]) -> None:
+    """Render the base-case arm's-length range analysis."""
+
+    st.subheader(
+        "Arm's-Length Range Analysis - Operating Margin " "(FY22-FY24, 3-year weighted)"
+    )
+
+    range_dict = result["range"]
+    position = result["position"]
+    if not isinstance(range_dict, dict) or not isinstance(position, dict):
+        st.warning("Benchmark result is malformed.")
+        return
+
+    st.metric(
+        "Pfizer Pharma GmbH weighted Operating Margin",
+        _format_pli_value(float(result["tested_pli"]), config.PLI_OPERATING_MARGIN),
+    )
+
+    st.plotly_chart(
+        arms_length_plot(
+            result["comparables_pli"],
+            float(result["tested_pli"]),
+            "Accepted Comparable Operating Margin Distribution",
+            "Operating Margin (%)",
+        ),
+        use_container_width=True,
+    )
+
+    st.dataframe(
+        _range_summary_frame(range_dict, config.PLI_OPERATING_MARGIN),
+        hide_index=True,
+        use_container_width=True,
+    )
+    st.info(_position_sentence(position, config.PLI_OPERATING_MARGIN))
+
+    st.dataframe(
+        _benchmark_comparables_frame(
+            result["comparables_detail"],
+            config.PLI_OPERATING_MARGIN,
+        ),
+        hide_index=True,
+        use_container_width=True,
+        column_config={
+            "Weighted PLI": st.column_config.NumberColumn(
+                "Weighted OM",
+                format="%.2f%%",
+            ),
+            "Revenue EURm": st.column_config.NumberColumn(
+                f"Revenue ({config.EURO_SIGN}M)",
+                format=f"{config.EURO_SIGN} %.0fM",
+            ),
+        },
+    )
+
+
+def _render_sensitivity(
+    tested_party: pd.DataFrame,
+    accepted_comparables: pd.DataFrame,
+    base_result: dict[str, object],
+) -> None:
+    """Render benchmark sensitivity scenarios."""
+
+    include_adjustment = st.checkbox(
+        "Include optional Pfizer FY22 EBIT normalization "
+        f"({config.EURO_SIGN}{config.PFIZER_FY22_RESTRUCTURING_CHARGE_EUR_K:,.0f}k)",
+        value=False,
+    )
+    scenarios = run_all_scenarios(
+        tested_party_df=tested_party,
+        comparables_df=accepted_comparables,
+        include_fy22_adjustment=include_adjustment,
+    )
+    summary = scenario_summary_frame(scenarios)
+    base_position = str(base_result["position"]["position"])
+    summary["Conclusion changes"] = summary["Position"] != base_position
+    display = summary.copy()
+    for column in ["Tested PLI", "Q1", "Median", "Q3"]:
+        display[column] = display.apply(
+            lambda row, value_column=column: _format_pli_value(
+                row[value_column],
+                _pli_type_from_label(row["PLI"]),
+            ),
+            axis=1,
+        )
+    display["Position"] = display["Position"].map(_position_label)
+    st.dataframe(display, hide_index=True, use_container_width=True)
+
+
+def _render_pli_detail(result: dict[str, object]) -> None:
+    """Render per-comparable yearly PLI detail."""
+
+    detail = result["yearly_comparables_pli"].copy()
+    pli_type = str(result["pli_type"])
+    display = detail.copy()
+    value_columns = [
+        column
+        for column in display.columns
+        if column not in {config.COMPANY_NAME_COLUMN, config.COUNTRY_COLUMN}
+    ]
+    for column in value_columns:
+        display[column] = display[column].apply(
+            lambda value: _format_pli_value(value, pli_type)
+        )
+
+    st.dataframe(display, hide_index=True, use_container_width=True)
+    for _, row in display.iterrows():
+        with st.expander(str(row[config.COMPANY_NAME_COLUMN])):
+            st.write(row.to_frame(name="Value"))
+
+
+def _range_summary_frame(
+    range_dict: dict[str, object],
+    pli_type: str,
+) -> pd.DataFrame:
+    """Return a formatted arm's-length range summary table."""
+
+    rows = [
+        ("N comparables", f"{int(range_dict['n']):,}"),
+        ("Minimum", _format_pli_value(range_dict["min"], pli_type)),
+        ("Q1 (25th percentile)", _format_pli_value(range_dict["q1"], pli_type)),
+        ("Median", _format_pli_value(range_dict["median"], pli_type)),
+        ("Q3 (75th percentile)", _format_pli_value(range_dict["q3"], pli_type)),
+        ("Maximum", _format_pli_value(range_dict["max"], pli_type)),
+        ("IQR width", _format_pli_spread(range_dict["iqr_width"], pli_type)),
+    ]
+    return pd.DataFrame(rows, columns=["Metric", "Value"])
+
+
+def _benchmark_comparables_frame(
+    detail: pd.DataFrame,
+    pli_type: str,
+) -> pd.DataFrame:
+    """Return formatted comparable-company benchmark detail."""
+
+    display = detail.copy()
+    display["Revenue EURm"] = display[config.LATEST_REVENUE_COLUMN] / 1_000
+    display["Weighted PLI"] = display["weighted_pli"]
+    if config.PLI_PERCENT_FORMAT.get(pli_type, False):
+        display["Weighted PLI"] = display["Weighted PLI"] * 100
+    display["IQR status"] = display["inside_iqr"].map(
+        {True: "Inside IQR", False: "Outside IQR"}
+    )
+    return display[
+        [
+            config.COMPANY_NAME_COLUMN,
+            config.COUNTRY_COLUMN,
+            "Revenue EURm",
+            "Weighted PLI",
+            "IQR status",
+            config.TRADE_DESCRIPTION_COLUMN,
+        ]
+    ]
+
+
+def _position_sentence(position: dict[str, object], pli_type: str) -> str:
+    """Return a human-readable tested-party positioning sentence."""
+
+    position_label = _position_label(str(position["position"]))
+    distance = float(position["distance_to_range"])
+    direction = str(position["adjustment_direction"])
+    distance_text = _format_pli_spread(abs(distance), pli_type)
+
+    if position["position"] == "within_range":
+        return (
+            f"Position: {position_label}. Pfizer is within the interquartile "
+            "arm's-length range; no adjustment is indicated by this test."
+        )
+    if position["position"] == "above_q3":
+        return (
+            f"Position: {position_label}. Pfizer is {distance_text} above Q3. "
+            f"Suggested adjustment direction: {direction}."
+        )
+    if position["position"] == "below_q1":
+        return (
+            f"Position: {position_label}. Pfizer is {distance_text} below Q1. "
+            f"Suggested adjustment direction: {direction}."
+        )
+    return "Position could not be determined due to missing data."
+
+
+def _methodology_text() -> str:
+    """Load methodology text for the Analysis tab."""
+
+    methodology_path = config.PROJECT_ROOT / "docs" / "methodology.md"
+    return methodology_path.read_text(encoding="utf-8")
 
 
 def _about_page() -> None:
@@ -286,6 +527,49 @@ def _format_nace(value: object) -> str:
     if description is None:
         return code
     return f"{code} - {description}"
+
+
+def _format_pli_value(value: object, pli_type: str) -> str:
+    """Format a PLI value for display."""
+
+    if pd.isna(value):
+        return "n/a"
+    numeric_value = float(value)
+    if config.PLI_PERCENT_FORMAT.get(pli_type, False):
+        return f"{numeric_value * 100:.2f}%"
+    return f"{numeric_value:.2f}x"
+
+
+def _format_pli_spread(value: object, pli_type: str) -> str:
+    """Format a PLI distance or range width."""
+
+    if pd.isna(value):
+        return "n/a"
+    numeric_value = float(value)
+    if config.PLI_PERCENT_FORMAT.get(pli_type, False):
+        return f"{numeric_value * 100:.2f} pp"
+    return f"{numeric_value:.2f}x"
+
+
+def _position_label(position: str) -> str:
+    """Return a human-readable position label."""
+
+    labels = {
+        "below_q1": "Below Q1",
+        "within_range": "Within range",
+        "above_q3": "Above Q3",
+        "not_available": "Not available",
+    }
+    return labels.get(position, position)
+
+
+def _pli_type_from_label(label: str) -> str:
+    """Infer the configured PLI key from a display label."""
+
+    for pli_type, pli_label in config.PLI_LABELS.items():
+        if label == pli_label:
+            return pli_type
+    return config.PLI_OPERATING_MARGIN
 
 
 def _build_funnel_chart(stats: dict[str, object]) -> go.Figure:

@@ -32,6 +32,11 @@ LATEST_REVENUE_COLUMN = "Sales th EUR Last avail. yr"
 LATEST_EMPLOYEES_COLUMN = "Number of employees Last avail. yr"
 TRADE_DESCRIPTION_COLUMN = "Trade description (English)"
 BVD_ID_COLUMN = "BvD ID"
+SALES_COLUMN_PREFIX = "Sales th EUR"
+EBIT_COLUMN_PREFIX = "Operating profit (loss) [EBIT] th EUR"
+GROSS_PROFIT_COLUMN_PREFIX = "Gross profit th EUR"
+MATERIAL_COSTS_COLUMN_PREFIX = "Material costs th EUR"
+ROCE_COLUMN_PREFIX = "ROCE using P/L before tax"
 
 NACE_DESCRIPTIONS = {
     "4646": "Wholesale of pharmaceutical goods",
@@ -144,5 +149,31 @@ YEAR_SUFFIXES = (
     "Year - 3",
     "Year - 4",
 )
+
+DEFAULT_BENCHMARK_PERIOD = ["Last avail. yr", "Year - 1", "Year - 2"]
+PERIOD_LABELS = {
+    "Last avail. yr": "FY 2024",
+    "Year - 1": "FY 2023",
+    "Year - 2": "FY 2022",
+    "Year - 3": "FY 2021",
+    "Year - 4": "FY 2020",
+}
+
+PLI_OPERATING_MARGIN = "operating_margin"
+PLI_BERRY_RATIO = "berry_ratio"
+PLI_ROCE = "roce"
+PLI_OPTIONS = [PLI_OPERATING_MARGIN, PLI_BERRY_RATIO, PLI_ROCE]
+PLI_LABELS = {
+    PLI_OPERATING_MARGIN: "Operating Margin",
+    PLI_BERRY_RATIO: "Berry Ratio",
+    PLI_ROCE: "ROCE",
+}
+PLI_PERCENT_FORMAT = {
+    PLI_OPERATING_MARGIN: True,
+    PLI_BERRY_RATIO: False,
+    PLI_ROCE: True,
+}
+QUARTILE_METHOD = "linear"
+PFIZER_FY22_RESTRUCTURING_CHARGE_EUR_K = 71_930
 
 MISSING_VALUE_TOKENS = ("n.a.", "n.a", "N.A.", "N/A", "na", "-")

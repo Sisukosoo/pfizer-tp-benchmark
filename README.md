@@ -34,7 +34,7 @@ Run tests:
 
 ## Methodology
 
-The project applies the Transactional Net Margin Method (TNMM), following the OECD Transfer Pricing Guidelines, to benchmark Pfizer Pharma GmbH against independent EU/EFTA pharmaceutical distributors selected from Orbis. The rejection cascade starts from 55 NACE 4646 candidates and applies functional comparability criteria to exclude entities whose functions, assets, risks, product segment, ownership model, or data quality differ materially from the tested party. This reflects the OECD TPG comparability focus, including paragraph 3.24 on practical comparability considerations in narrow markets. The current baseline leaves 10 accepted comparables for later PLI and arm's length range analysis.
+The project applies the Transactional Net Margin Method (TNMM), following the OECD Transfer Pricing Guidelines, to benchmark Pfizer Pharma GmbH against independent EU/EFTA pharmaceutical distributors selected from Orbis. The rejection cascade starts from 55 NACE 4646 candidates and applies functional comparability criteria to exclude entities whose functions, assets, risks, product segment, ownership model, or data quality differ materially from the tested party. This reflects the OECD TPG comparability focus, including paragraph 3.24 on practical comparability considerations in narrow markets. The current baseline leaves 10 accepted comparables for PLI and arm's length range analysis.
 
 Rejection categories:
 
@@ -48,29 +48,34 @@ Rejection categories:
 - `MIXED_PORTFOLIO`: pharma distribution materially mixed with cosmetics, perfumes, devices, or own-marketed specialties.
 - `LOW_DATA_QUALITY`: insufficient evidence to validate functional comparability.
 
+## Analysis
+
+The analytical core applies OECD TPG Chapter II Part III TNMM logic. Operating Margin, EBIT / Sales, is the primary PLI because Pfizer Pharma GmbH is characterized as a limited-risk distributor with sales and marketing functions. Berry Ratio is used as a secondary check, and ROCE is read from Orbis as an additional capital-return indicator. Multi-year PLIs are weighted as sum(numerator) / sum(denominator), rather than averaging yearly ratios, to reduce volatility from one-off years. The default period is FY22-FY24, using Orbis `Last avail. yr`, `Year - 1`, and `Year - 2`. The arm's-length range is the interquartile range of accepted comparable PLIs using linear quartiles. Sensitivity scenarios test period choice, PLI choice, outlier exclusions, Italian regional distributor exclusions, and Pfizer's FY22 restructuring normalization.
+
 ## Project Structure
 
 ```text
 pfizer-tp-benchmark/
-├── streamlit_app.py
-├── src/
-│   ├── config.py
-│   ├── data_loader.py
-│   ├── default_decisions.py
-│   ├── comparables.py
-│   ├── pli_calculator.py
-│   ├── benchmarking.py
-│   └── visualizations.py
-├── tests/
-├── data/
-│   ├── raw/
-│   ├── processed/
-│   └── synthetic/
-├── output/
-│   ├── figures/
-│   └── reports/
-├── docs/
-└── notebooks/
++-- streamlit_app.py
++-- src/
+|   +-- config.py
+|   +-- data_loader.py
+|   +-- default_decisions.py
+|   +-- comparables.py
+|   +-- pli_calculator.py
+|   +-- benchmarking.py
+|   +-- sensitivity.py
+|   +-- visualizations.py
++-- tests/
++-- data/
+|   +-- raw/
+|   +-- processed/
+|   +-- synthetic/
++-- output/
+|   +-- figures/
+|   +-- reports/
++-- docs/
++-- notebooks/
 ```
 
 ## License
