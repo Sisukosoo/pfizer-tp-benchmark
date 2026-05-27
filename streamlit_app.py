@@ -106,15 +106,21 @@ def _overview_page() -> None:
     row = tested_party.iloc[0]
     latest_revenue = row.get(config.LATEST_REVENUE_COLUMN, pd.NA)
     latest_employees = row.get(config.LATEST_EMPLOYEES_COLUMN, pd.NA)
-    st.subheader(str(row.get(config.COMPANY_NAME_COLUMN, "Tested party")))
 
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Country", _display_value(row.get(config.COUNTRY_COLUMN)))
-    col2.metric("Latest revenue", _format_revenue_millions(latest_revenue))
-    col3.metric("Employees (latest)", _format_number(latest_employees))
+    content_col, logo_col = st.columns([4, 1])
+    with content_col:
+        st.subheader(str(row.get(config.COMPANY_NAME_COLUMN, "Tested party")))
 
-    st.markdown(f"**NACE:** {_format_nace(row.get(config.NACE_COLUMN))}")
-    st.write(config.TESTED_PARTY_CHARACTERIZATION)
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Country", _display_value(row.get(config.COUNTRY_COLUMN)))
+        col2.metric("Latest revenue", _format_revenue_millions(latest_revenue))
+        col3.metric("Employees (latest)", _format_number(latest_employees))
+
+        st.markdown(f"**NACE:** {_format_nace(row.get(config.NACE_COLUMN))}")
+        st.write(config.TESTED_PARTY_CHARACTERIZATION)
+
+    with logo_col:
+        st.image(str(config.PFIZER_LOGO_PATH), use_container_width=True)
 
 
 def _comparables_page() -> None:
