@@ -647,15 +647,7 @@ def _methodology_text() -> str:
 def _about_page() -> None:
     """Render the about page."""
 
-    st.header("About")
-    st.write(
-        "This portfolio project benchmarks Pfizer Pharma GmbH under the OECD "
-        "Transactional Net Margin Method using Orbis comparables data."
-    )
-    st.write(
-        "Data files are excluded from the repository because the source exports "
-        "are confidential under TU München's Bureau van Dijk subscription."
-    )
+    st.markdown(_about_page_html(), unsafe_allow_html=True)
 
 
 def _show_missing_data_message() -> None:
@@ -770,6 +762,148 @@ def _overview_hero_html(
         </div>
         <div class="overview-note">NACE: {nace}</div>
         <div class="overview-note">{characterization}</div>
+      </div>
+    </section>
+    """
+
+
+def _about_page_html() -> str:
+    """Return the About page HTML with context and a subtle watermark."""
+
+    logo_uri = _asset_data_uri(config.PFIZER_LOGO_PATH)
+    return f"""
+    <style>
+      .about-hero {{
+        position: relative;
+        min-height: 620px;
+        padding: 1rem 0 4rem 0;
+        overflow: hidden;
+      }}
+      .about-watermark {{
+        position: absolute;
+        left: 50%;
+        top: 52%;
+        width: min(82vw, 1040px);
+        max-width: none;
+        transform: translate(-50%, -50%) rotate(-6deg);
+        opacity: 0.055;
+        pointer-events: none;
+        z-index: 0;
+      }}
+      .about-content {{
+        position: relative;
+        z-index: 1;
+        max-width: 1120px;
+      }}
+      .about-title {{
+        margin: 1.4rem 0 1rem 0;
+        font-size: 2.65rem;
+        line-height: 1.1;
+        font-weight: 750;
+        letter-spacing: 0;
+      }}
+      .about-lede {{
+        max-width: 900px;
+        margin: 0 0 2.25rem 0;
+        font-size: 1.18rem;
+        line-height: 1.55;
+        font-weight: 500;
+      }}
+      .about-grid {{
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1.65rem 3rem;
+        max-width: 1040px;
+        margin-top: 1.5rem;
+      }}
+      .about-section {{
+        border-left: 3px solid rgba(0, 159, 218, 0.68);
+        padding-left: 1rem;
+      }}
+      .about-section h3 {{
+        margin: 0 0 0.45rem 0;
+        font-size: 1.08rem;
+        line-height: 1.25;
+        font-weight: 760;
+      }}
+      .about-section p {{
+        margin: 0;
+        font-size: 0.98rem;
+        line-height: 1.55;
+      }}
+      .about-footer {{
+        max-width: 980px;
+        margin-top: 2.6rem;
+        padding-top: 1.15rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.16);
+        font-size: 0.95rem;
+        line-height: 1.55;
+        opacity: 0.92;
+      }}
+      @media (max-width: 760px) {{
+        .about-hero {{
+          min-height: 820px;
+        }}
+        .about-watermark {{
+          width: 128vw;
+          opacity: 0.045;
+        }}
+        .about-grid {{
+          grid-template-columns: 1fr;
+          gap: 1.3rem;
+        }}
+      }}
+    </style>
+    <section class="about-hero">
+      <img class="about-watermark" src="{logo_uri}" alt="" />
+      <div class="about-content">
+        <div class="about-title">About</div>
+        <p class="about-lede">
+          This is a student learning and portfolio project by Sisu Kosoo at TU
+          München. It uses Pfizer Pharma GmbH as a realistic case to practice
+          transfer pricing benchmarking, OECD TNMM logic, Orbis data handling,
+          Python analytics, and Streamlit reporting.
+        </p>
+        <div class="about-grid">
+          <div class="about-section">
+            <h3>Why this project exists</h3>
+            <p>
+              The goal is to show how an accounting and finance student can
+              translate transfer pricing methodology into a reproducible
+              analytical workflow suitable for Big 4 interview discussion.
+            </p>
+          </div>
+          <div class="about-section">
+            <h3>Methodological focus</h3>
+            <p>
+              The app applies the Transactional Net Margin Method. Operating
+              Margin is the primary PLI for the LRD-SM profile, with Berry Ratio
+              and ROCE used as secondary checks.
+            </p>
+          </div>
+          <div class="about-section">
+            <h3>Data boundaries</h3>
+            <p>
+              The analysis uses Orbis exports for Pfizer Pharma GmbH and 55
+              EU/EFTA NACE 4646 candidate comparables. Source files are
+              confidential under TU München's Bureau van Dijk subscription and
+              are not committed to Git.
+            </p>
+          </div>
+          <div class="about-section">
+            <h3>What the app produces</h3>
+            <p>
+              The workflow documents the rejection cascade, arm's-length range,
+              sensitivity scenarios, comparable-level PLI detail, and an Excel
+              workpaper that can be reviewed like a compact TP file.
+            </p>
+          </div>
+        </div>
+        <div class="about-footer">
+          This is not a statutory transfer pricing report or professional tax
+          opinion. It is an educational portfolio project designed to make the
+          reasoning, assumptions, limitations, and calculations visible.
+        </div>
       </div>
     </section>
     """
