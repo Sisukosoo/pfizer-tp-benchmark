@@ -1,4 +1,9 @@
-"""Default manual triage decisions for the 55 Orbis comparables candidates."""
+"""Synthetic default triage decisions for public demo mode.
+
+The private Orbis candidate list is intentionally not stored in this module.
+Real-data decisions are kept locally in the gitignored
+`data/processed/comparables_decisions.csv` file.
+"""
 
 from __future__ import annotations
 
@@ -10,13 +15,51 @@ from src import config
 
 DEFAULT_MODIFIED_AT = datetime(2026, 5, 27, tzinfo=UTC).isoformat()
 
+ACCEPTED_DEMO_COMPANIES: tuple[tuple[str, str], ...] = (
+    ("Demo Pharma Distribution GmbH", "Germany"),
+    ("Nordic Rx Wholesale AB", "Sweden"),
+    ("Alpine Medicines Trading AG", "Austria"),
+    ("Iberia Pharma Supply SL", "Spain"),
+    ("Baltic Health Distribution OÜ", "Estonia"),
+    ("Benelux Medicines Wholesale BV", "Netherlands"),
+    ("Adriatic Pharma Trade SRL", "Italy"),
+    ("Central Europe Rx Sp zoo", "Poland"),
+    ("Lusitania Pharma Logistics SA", "Portugal"),
+    ("Danube Healthcare Wholesale Kft", "Hungary"),
+)
+
+REJECTED_DEMO_COUNTS: dict[str, int] = {
+    config.CATEGORY_MANUFACTURER: 7,
+    config.CATEGORY_COOPERATIVE: 11,
+    config.CATEGORY_RETAIL: 4,
+    config.CATEGORY_WRONG_SEGMENT: 7,
+    config.CATEGORY_HOLDING: 1,
+    config.CATEGORY_LOGISTICS: 1,
+    config.CATEGORY_BRAND_OWNER: 3,
+    config.CATEGORY_MIXED_PORTFOLIO: 7,
+    config.CATEGORY_LOW_DATA_QUALITY: 4,
+}
+
+DEMO_COUNTRIES: tuple[str, ...] = (
+    "Germany",
+    "France",
+    "Italy",
+    "Spain",
+    "Austria",
+    "Sweden",
+    "Netherlands",
+    "Belgium",
+    "Finland",
+    "Portugal",
+)
+
 
 def make_decision_key(company_name: str, country: str) -> str:
     """Build a stable fallback key when an Orbis export lacks literal BvD IDs.
 
     Args:
-        company_name: Company name from the Orbis export.
-        country: Country from the Orbis export.
+        company_name: Company name from the export.
+        country: Country from the export.
 
     Returns:
         Deterministic fallback identifier stored in the `bvd_id` field.
@@ -25,6 +68,22 @@ def make_decision_key(company_name: str, country: str) -> str:
     country_token = _slug(country)
     company_token = _slug(company_name)
     return f"FALLBACK:{country_token}:{company_token}"
+
+
+def synthetic_company_names() -> list[tuple[str, str]]:
+    """Return the public-demo company universe in decision order.
+
+    Returns:
+        List of company name and country pairs.
+    """
+
+    companies = list(ACCEPTED_DEMO_COMPANIES)
+    for category, count in REJECTED_DEMO_COUNTS.items():
+        label = config.REJECT_CATEGORIES[category]["label"]
+        for index in range(1, count + 1):
+            country = DEMO_COUNTRIES[(len(companies) + index) % len(DEMO_COUNTRIES)]
+            companies.append((f"Demo {label} Candidate {index:02d}", country))
+    return companies
 
 
 def _accept(company_name: str, country: str) -> dict[str, Any]:
@@ -72,287 +131,26 @@ def _slug(value: str) -> str:
     return re.sub(r"-+", "-", normalized)
 
 
-DEFAULT_DECISIONS: tuple[dict[str, Any], ...] = (
-    _reject(
-        "ORIOLA OYJ",
-        "Finland",
-        config.CATEGORY_LOW_DATA_QUALITY,
-        "Not covered by the manual accept list; baseline rejects pending validation.",
-    ),
-    _reject(
-        "HERMANDAD FARMACEUTICA DEL MEDITERRANEO S.C.L.",
-        "Spain",
-        config.CATEGORY_COOPERATIVE,
-        "Sociedad Cooperativa Limitada pharmacy cooperative.",
-    ),
-    _reject(
-        "COOPERATIVA ESERCENTI FARMACIA SOC. COOP. A R.L. CON SIGLA CEF",
-        "Italy",
-        config.CATEGORY_COOPERATIVE,
-        "Pharmacy cooperative structure.",
-    ),
-    _reject(
-        "OPELLA HEALTHCARE INTERNATIONAL SAS",
-        "France",
-        config.CATEGORY_BRAND_OWNER,
-        "Sanofi consumer health spin-off and brand owner.",
-    ),
-    _reject(
-        "COOPERATIVE D'EXPLOITATION ET DE REPARTITION PHARMACEUTIQUE "
-        "DE BRETAGNE ATLANTIQUE",
-        "France",
-        config.CATEGORY_COOPERATIVE,
-        "Pharmacy cooperative and repartition entity.",
-    ),
-    _reject(
-        "DOCMORRIS AG",
-        "Switzerland",
-        config.CATEGORY_RETAIL,
-        "Online pharmacy and B2C retailer profile.",
-    ),
-    _reject(
-        "UNNEFAR S.COOP.",
-        "Spain",
-        config.CATEGORY_COOPERATIVE,
-        "Pharmacy cooperative.",
-    ),
-    _reject(
-        "INTERCOS S.P.A.",
-        "Italy",
-        config.CATEGORY_MANUFACTURER,
-        "Cosmetics manufacturer.",
-    ),
-    _reject(
-        "GIPHAR GROUPE",
-        "France",
-        config.CATEGORY_COOPERATIVE,
-        "Pharmacy chain group.",
-    ),
-    _reject(
-        "CENTRAVET",
-        "France",
-        config.CATEGORY_WRONG_SEGMENT,
-        "Veterinary pharmaceuticals.",
-    ),
-    _reject(
-        "RICHARD KEHR GMBH & CO. KG",
-        "Germany",
-        config.CATEGORY_LOW_DATA_QUALITY,
-        "Not covered by the manual accept list; baseline rejects pending validation.",
-    ),
-    _reject(
-        "APOTEA AB",
-        "Sweden",
-        config.CATEGORY_RETAIL,
-        "Online pharmacy retailer.",
-    ),
-    _reject(
-        "GUACCI S.P.A.",
-        "Italy",
-        config.CATEGORY_LOW_DATA_QUALITY,
-        "Not covered by the manual accept list; baseline rejects pending validation.",
-    ),
-    _reject(
-        "UNIFARM S.P.A. UNIONE FARMACISTI TRENTINO-ALTO ADIGE",
-        "Italy",
-        config.CATEGORY_COOPERATIVE,
-        "Unione Farmacisti pharmacy union.",
-    ),
-    _reject(
-        "MULTIPHARMA GROUP",
-        "Belgium",
-        config.CATEGORY_LOW_DATA_QUALITY,
-        "Not covered by the manual accept list; baseline rejects pending validation.",
-    ),
-    _reject(
-        "FEDERFARMA.CO DISTRIBUZIONE E SERVIZI IN FARMACIA S.P.A.",
-        "Italy",
-        config.CATEGORY_COOPERATIVE,
-        "Federazione Farmacisti network.",
-    ),
-    _reject(
-        "VYGON",
-        "France",
-        config.CATEGORY_MANUFACTURER,
-        "Medical and surgical equipment manufacturer.",
-    ),
-    _reject(
-        "SMS MEDIPOOL AG",
-        "Germany",
-        config.CATEGORY_MANUFACTURER,
-        "Pharmaceutical manufacturer.",
-    ),
-    _accept("TEDIS", "France"),
-    _accept("PHARMAAND GMBH", "Austria"),
-    _reject(
-        "DISTRIBUIDORA FARMACEUTICA DE GIPUZKOA-GIPUZKOAKO FARMAZI BANATZAILEA SA",
-        "Spain",
-        config.CATEGORY_MIXED_PORTFOLIO,
-        "Wholesale profile mixed with NACE 2110 pharmaceutical manufacturing signal.",
-    ),
-    _reject(
-        "C.I.A.M. - SOCIETA' A RESPONSABILITA' LIMITATA",
-        "Italy",
-        config.CATEGORY_RETAIL,
-        "Pet food retail activity.",
-    ),
-    _reject(
-        "ASTUTE HEALTHCARE LIMITED",
-        "United Kingdom",
-        config.CATEGORY_MIXED_PORTFOLIO,
-        "Wholesale and retail mix.",
-    ),
-    _reject(
-        "ABF-PHARMAZIE GMBH & CO. KG",
-        "Germany",
-        config.CATEGORY_MANUFACTURER,
-        "Compounding manufacturer.",
-    ),
-    _accept("UFM - UNIONE FARMACEUTICA MITO S.R.L.", "Italy"),
-    _reject(
-        "LBI COOPERATIVE SOCIETE ANONYME COOPERATIVE A CAPITAL VARIABLE",
-        "France",
-        config.CATEGORY_COOPERATIVE,
-        "Pharmacy cooperative.",
-    ),
-    _reject(
-        "MEDOVIA AB",
-        "Sweden",
-        config.CATEGORY_MIXED_PORTFOLIO,
-        "Business description too generic and service-oriented.",
-    ),
-    _reject(
-        "BRUNO FARMACEUTICI S.P.A.",
-        "Italy",
-        config.CATEGORY_BRAND_OWNER,
-        "Italian pharma developer with own brands.",
-    ),
-    _reject(
-        "CO.D.IN. MARCHE - CONSORZIO PER IL COORDINAMENTO DELLA DISTRIBU "
-        "ZIONE INDIRETTA DEL FARMACO IN REGIME DI CONVENZIONE SPECIALE",
-        "Italy",
-        config.CATEGORY_COOPERATIVE,
-        "Pharmacy distribution consortium.",
-    ),
-    _reject(
-        "LAB LOGISTICS GROUP GMBH",
-        "Germany",
-        config.CATEGORY_LOGISTICS,
-        "Logistics services for laboratory dealers.",
-    ),
-    _reject(
-        "AMAPHARM GMBH",
-        "Germany",
-        config.CATEGORY_MANUFACTURER,
-        "Gummy vitamin manufacturer.",
-    ),
-    _reject(
-        "MEDAC SAS",
-        "France",
-        config.CATEGORY_MIXED_PORTFOLIO,
-        "Niche pharmaceutical specialties with own marketing brands.",
-    ),
-    _accept("CLUB SALUTE S.P.A.", "Italy"),
-    _reject(
-        "IMMEDICA PHARMA AB",
-        "Sweden",
-        config.CATEGORY_BRAND_OWNER,
-        "Develops, registers, and distributes pharmaceutical products.",
-    ),
-    _accept("PHARMORE GMBH", "Germany"),
-    _reject(
-        "MANA PHARMA SL.",
-        "Spain",
-        config.CATEGORY_MIXED_PORTFOLIO,
-        "Medicines, devices, and cosmetics portfolio mix.",
-    ),
-    _reject(
-        "CENTAURO VETERINARIA S.A.",
-        "Spain",
-        config.CATEGORY_WRONG_SEGMENT,
-        "Primary activity linked to livestock and veterinary segment.",
-    ),
-    _accept("SAIMA S.P.A.", "Italy"),
-    _reject(
-        "MUNDIPHARMA VERWALTUNGSGESELLSCHAFT MIT BESCHRAENKTER HAFTUNG",
-        "Germany",
-        config.CATEGORY_HOLDING,
-        "Holding company.",
-    ),
-    _accept("AMEFA GMBH", "Germany"),
-    _reject(
-        "SENTINEL CH. S.P.A.",
-        "Italy",
-        config.CATEGORY_WRONG_SEGMENT,
-        "Diagnostic kits manufacturer.",
-    ),
-    _reject(
-        "ECOFAR PRODUCTOS SL",
-        "Spain",
-        config.CATEGORY_MIXED_PORTFOLIO,
-        "Pharmaceutical, parapharma, and medical-device portfolio mix.",
-    ),
-    _reject(
-        "PEARL CHEMIST GROUP LIMITED",
-        "United Kingdom",
-        config.CATEGORY_RETAIL,
-        "Retail pharmacy group.",
-    ),
-    _reject(
-        "A1 PHARMACEUTICALS PUBLIC LIMITED COMPANY",
-        "United Kingdom",
-        config.CATEGORY_MANUFACTURER,
-        "Manufacturing and wholesale activity mix.",
-    ),
-    _reject(
-        "FARMACISTI ASSOCIATI PIEMONTE S.R.L. SIGLABILE IN F.A.P. S.R.L.",
-        "Italy",
-        config.CATEGORY_COOPERATIVE,
-        "Pharmacists association.",
-    ),
-    _reject(
-        "URSATEC GMBH",
-        "Germany",
-        config.CATEGORY_MANUFACTURER,
-        "Packaging manufacturer.",
-    ),
-    _reject(
-        "ZOLL MEDICAL FRANCE",
-        "France",
-        config.CATEGORY_WRONG_SEGMENT,
-        "Medicosurgical materials, not pharma distribution.",
-    ),
-    _reject(
-        "SANITAETSHAUS MUELLER-BETTEN GMBH & CO. KG",
-        "Germany",
-        config.CATEGORY_WRONG_SEGMENT,
-        "Rehabilitation products and retail profile.",
-    ),
-    _accept("ALCYON ITALIA S.P.A.", "Italy"),
-    _reject(
-        "CHEMILINES GROUP HOLDINGS LIMITED",
-        "United Kingdom",
-        config.CATEGORY_MIXED_PORTFOLIO,
-        "Pharmaceuticals mixed with perfumes and toiletries.",
-    ),
-    _reject(
-        "AMPRI HANDELSGESELLSCHAFT MBH",
-        "Germany",
-        config.CATEGORY_WRONG_SEGMENT,
-        "Medical and dental supplies.",
-    ),
-    _reject(
-        "FARMACIE PARTENOPEE S.R.L.",
-        "Italy",
-        config.CATEGORY_COOPERATIVE,
-        "Pharmacies association.",
-    ),
-    _reject(
-        "VETCARE OY",
-        "Finland",
-        config.CATEGORY_WRONG_SEGMENT,
-        "Veterinary and manufacturer profile.",
-    ),
-    _accept("BB FARMA SRL", "Italy"),
-    _accept("MICERIUM S.P.A.", "Italy"),
-)
+def _build_default_decisions() -> tuple[dict[str, Any], ...]:
+    """Build synthetic default decisions for the public demo workflow."""
+
+    decisions: list[dict[str, Any]] = [
+        _accept(company_name, country)
+        for company_name, country in ACCEPTED_DEMO_COMPANIES
+    ]
+    company_offset = 0
+    for category, count in REJECTED_DEMO_COUNTS.items():
+        label = config.REJECT_CATEGORIES[category]["label"]
+        description = config.REJECT_CATEGORIES[category]["description"]
+        for index in range(1, count + 1):
+            country = DEMO_COUNTRIES[
+                (len(ACCEPTED_DEMO_COMPANIES) + company_offset + index)
+                % len(DEMO_COUNTRIES)
+            ]
+            company_name = f"Demo {label} Candidate {index:02d}"
+            decisions.append(_reject(company_name, country, category, description))
+        company_offset += count
+    return tuple(decisions)
+
+
+DEFAULT_DECISIONS: tuple[dict[str, Any], ...] = _build_default_decisions()

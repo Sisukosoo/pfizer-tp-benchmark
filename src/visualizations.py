@@ -317,18 +317,6 @@ def _short_company_name(company_name: object, max_length: int = 30) -> str:
     """Return a compact company label for charts."""
 
     name = str(company_name)
-    replacements = {
-        "UFM - UNIONE FARMACEUTICA MITO S.R.L.": "UFM",
-        "PHARMAAND GMBH": "PHARMAAND",
-        "PHARMORE GMBH": "PHARMORE",
-        "ALCYON ITALIA S.P.A.": "ALCYON ITALIA",
-        "MICERIUM S.P.A.": "MICERIUM",
-        "CLUB SALUTE S.P.A.": "CLUB SALUTE",
-        "SAIMA S.P.A.": "SAIMA",
-        "AMEFA GMBH": "AMEFA",
-    }
-    if name in replacements:
-        return replacements[name]
     if len(name) <= max_length:
         return name
     return f"{name[: max_length - 3].rstrip()}..."

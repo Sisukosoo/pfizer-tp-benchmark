@@ -55,17 +55,17 @@ st.set_page_config(
 
 
 @st.cache_data(show_spinner=False)
-def get_tested_party() -> pd.DataFrame:
+def get_tested_party(data_mode: str) -> pd.DataFrame:
     """Load tested-party data for Streamlit with caching."""
 
-    return load_tested_party()
+    return load_tested_party(data_mode)
 
 
 @st.cache_data(show_spinner=False)
-def get_comparables() -> pd.DataFrame:
+def get_comparables(data_mode: str) -> pd.DataFrame:
     """Load comparables data for Streamlit with caching."""
 
-    return load_comparables()
+    return load_comparables(data_mode)
 
 
 def main() -> None:
@@ -73,6 +73,8 @@ def main() -> None:
 
     with st.sidebar:
         st.title("Pfizer TP Benchmark")
+        current_mode = _selected_data_mode()
+        st.caption(f"Data mode: {current_mode.title()}")
         if st.button("Refresh data"):
             st.cache_data.clear()
             st.rerun()
@@ -88,17 +90,33 @@ def main() -> None:
     navigation.run()
 
 
+def _selected_data_mode() -> str:
+    """Return the current Streamlit data mode."""
+
+    return config.active_data_mode()
+
+
+def _data_files_available(data_mode: str) -> bool:
+    """Return whether tested-party and comparables files are available."""
+
+    return (
+        config.resolve_tested_party_path(data_mode).exists()
+        and config.resolve_comparables_path(data_mode).exists()
+    )
+
+
 def _overview_page() -> None:
     """Render the overview page."""
 
     st.header("Overview")
+    data_mode = _selected_data_mode()
 
-    if not config.TESTED_PARTY_PATH.exists():
+    if not config.resolve_tested_party_path(data_mode).exists():
         _show_missing_data_message()
         return
 
     try:
-        tested_party = get_tested_party()
+        tested_party = get_tested_party(data_mode)
     except (FileNotFoundError, ValueError) as error:
         st.warning(str(error))
         return
@@ -128,17 +146,18 @@ def _comparables_page() -> None:
         "pool of accepted comparables."
     )
 
-    if not config.COMPARABLES_PATH.exists():
+    data_mode = _selected_data_mode()
+    if not config.resolve_comparables_path(data_mode).exists():
         _show_missing_data_message()
         return
 
     try:
-        comparables = get_comparables()
+        comparables = get_comparables(data_mode)
+        decisions = load_decisions(data_mode=data_mode)
     except (FileNotFoundError, ValueError) as error:
         st.warning(str(error))
         return
 
-    decisions = load_decisions()
     accepted = get_accepted(comparables, decisions)
     rejected = get_rejected(comparables, decisions)
     pending = get_pending(comparables, decisions)
@@ -217,7 +236,10 @@ def _comparables_page() -> None:
             },
         )
         if st.button("Save edited decisions"):
-            save_decisions(mark_user_edits(decisions, edited_decisions))
+            save_decisions(
+                mark_user_edits(decisions, edited_decisions),
+                data_mode=data_mode,
+            )
             st.success("Decisions saved.")
             st.cache_data.clear()
             st.rerun()
@@ -225,12 +247,18 @@ def _comparables_page() -> None:
     st.divider()
     reset_col, download_col = st.columns(2)
     with reset_col:
-        confirm_reset = st.checkbox("Confirm reset to default decisions")
-        if st.button("Reset to default decisions", disabled=not confirm_reset):
-            reset_to_defaults()
-            st.success("Default decisions restored.")
-            st.cache_data.clear()
-            st.rerun()
+        if data_mode == config.DATA_MODE_REAL:
+            st.caption(
+                "Reset is disabled in real-data mode because private Orbis "
+                "decisions are local state."
+            )
+        else:
+            confirm_reset = st.checkbox("Confirm reset to default decisions")
+            if st.button("Reset to default decisions", disabled=not confirm_reset):
+                reset_to_defaults(data_mode=data_mode)
+                st.success("Default decisions restored.")
+                st.cache_data.clear()
+                st.rerun()
     with download_col:
         st.download_button(
             "Download decisions as CSV",
@@ -244,13 +272,14 @@ def _analysis_page() -> None:
     """Render the arm's-length range analysis page."""
 
     st.header("Analysis")
+    data_mode = _selected_data_mode()
 
-    if not config.TESTED_PARTY_PATH.exists() or not config.COMPARABLES_PATH.exists():
+    if not _data_files_available(data_mode):
         _show_missing_data_message()
         return
 
     try:
-        tested_party, accepted_comparables = _analysis_inputs()
+        tested_party, accepted_comparables = _analysis_inputs(data_mode)
     except (FileNotFoundError, ValueError) as error:
         st.warning(str(error))
         return
@@ -292,12 +321,12 @@ def _analysis_page() -> None:
         _render_pli_detail(base_result)
 
 
-def _analysis_inputs() -> tuple[pd.DataFrame, pd.DataFrame]:
+def _analysis_inputs(data_mode: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Load tested party and accepted comparables for analysis."""
 
-    tested_party = get_tested_party()
-    raw_comparables = get_comparables()
-    decisions = load_decisions()
+    tested_party = get_tested_party(data_mode)
+    raw_comparables = get_comparables(data_mode)
+    decisions = load_decisions(data_mode=data_mode)
     accepted_comparables = get_accepted(raw_comparables, decisions)
     return tested_party, accepted_comparables
 
@@ -310,15 +339,16 @@ def _report_page() -> None:
         "This page turns the current benchmark state into an interview-ready "
         "executive summary and a downloadable Excel workpaper."
     )
+    data_mode = _selected_data_mode()
 
-    if not config.TESTED_PARTY_PATH.exists() or not config.COMPARABLES_PATH.exists():
+    if not _data_files_available(data_mode):
         _show_missing_data_message()
         return
 
     try:
-        tested_party = get_tested_party()
-        raw_comparables = get_comparables()
-        decisions = load_decisions()
+        tested_party = get_tested_party(data_mode)
+        raw_comparables = get_comparables(data_mode)
+        decisions = load_decisions(data_mode=data_mode)
         context = build_report_context(tested_party, raw_comparables, decisions)
     except (FileNotFoundError, ValueError) as error:
         st.warning(str(error))

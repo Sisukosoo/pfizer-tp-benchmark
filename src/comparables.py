@@ -32,18 +32,33 @@ def default_decisions_frame() -> pd.DataFrame:
     return _normalize_decisions_frame(pd.DataFrame(DEFAULT_DECISIONS))
 
 
-def load_decisions(path: Path | str = config.DECISIONS_CSV_PATH) -> pd.DataFrame:
+def load_decisions(
+    path: Path | str | None = None,
+    data_mode: str | None = None,
+) -> pd.DataFrame:
     """Load mutable comparables decisions, creating the CSV from defaults if needed.
 
     Args:
-        path: CSV path for mutable decision state.
+        path: Optional CSV path for mutable decision state.
+        data_mode: Optional data mode, `real` or `synthetic`.
 
     Returns:
         Decisions DataFrame in the canonical schema.
     """
 
-    decisions_path = Path(path)
+    resolved_mode = data_mode or config.active_data_mode()
+    decisions_path = (
+        Path(path)
+        if path is not None
+        else config.resolve_decisions_csv_path(resolved_mode)
+    )
     if not decisions_path.exists():
+        if path is None and resolved_mode == config.DATA_MODE_REAL:
+            raise FileNotFoundError(
+                "Real-data decisions CSV not found. Keep the private decisions "
+                "file in data/processed/comparables_decisions.csv or switch to "
+                "synthetic demo mode."
+            )
         decisions = default_decisions_frame()
         save_decisions(decisions, decisions_path)
         return decisions
@@ -55,32 +70,48 @@ def load_decisions(path: Path | str = config.DECISIONS_CSV_PATH) -> pd.DataFrame
 
 def save_decisions(
     dataframe: pd.DataFrame,
-    path: Path | str = config.DECISIONS_CSV_PATH,
+    path: Path | str | None = None,
+    data_mode: str | None = None,
 ) -> None:
     """Persist mutable comparables decisions to CSV.
 
     Args:
         dataframe: Decisions DataFrame in the canonical schema.
-        path: Destination CSV path.
+        path: Optional destination CSV path.
+        data_mode: Optional data mode, `real` or `synthetic`.
     """
 
-    decisions_path = Path(path)
+    decisions_path = (
+        Path(path) if path is not None else config.resolve_decisions_csv_path(data_mode)
+    )
     decisions_path.parent.mkdir(parents=True, exist_ok=True)
     _normalize_decisions_frame(dataframe).to_csv(decisions_path, index=False)
 
 
-def reset_to_defaults(path: Path | str = config.DECISIONS_CSV_PATH) -> pd.DataFrame:
+def reset_to_defaults(
+    path: Path | str | None = None,
+    data_mode: str | None = None,
+) -> pd.DataFrame:
     """Overwrite mutable decisions with the default manual triage.
 
     Args:
-        path: CSV path for mutable decision state.
+        path: Optional CSV path for mutable decision state.
+        data_mode: Optional data mode, `real` or `synthetic`.
 
     Returns:
         Default decisions DataFrame.
     """
 
+    if (
+        path is None
+        and (data_mode or config.active_data_mode()) == config.DATA_MODE_REAL
+    ):
+        raise ValueError(
+            "Reset to defaults is only available for synthetic demo decisions. "
+            "Real-data decisions are private local state."
+        )
     decisions = default_decisions_frame()
-    save_decisions(decisions, path)
+    save_decisions(decisions, path, data_mode)
     return decisions
 
 

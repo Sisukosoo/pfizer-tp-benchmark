@@ -78,3 +78,15 @@ def test_no_company_in_both_accept_and_reject() -> None:
     )
 
     assert accepted.isdisjoint(rejected)
+
+
+def test_default_decisions_use_demo_companies() -> None:
+    """Committed defaults should not expose the private Orbis candidate list."""
+
+    decisions = default_decisions_frame()
+    public_demo_pattern = (
+        "Demo|Nordic|Alpine|Iberia|Baltic|Benelux|Adriatic|"
+        "Central Europe|Lusitania|Danube"
+    )
+
+    assert decisions["company_name"].str.contains(public_demo_pattern, regex=True).all()

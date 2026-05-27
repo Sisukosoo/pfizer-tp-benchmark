@@ -28,7 +28,7 @@ The methodological choices, project direction, data interpretation, and final re
 
 ## Data Notice
 
-Data files are not included in this repository.
+Real Orbis data files are not included in this repository.
 
 The Orbis exports used in the project are confidential under TU München's Moody's / Bureau van Dijk subscription. To reproduce the analysis, equivalent Orbis exports must be placed locally in `data/raw/`:
 
@@ -36,6 +36,8 @@ The Orbis exports used in the project are confidential under TU München's Moody
 - `Export_27_05_2026_13_13.xlsx`
 
 The `.gitignore` is configured so raw Orbis files, processed decision state, generated reports, and generated figures are not committed.
+
+The repository includes a synthetic public-demo dataset in `data/synthetic/`. It is structurally similar to the Orbis exports used by the app, but the company names and financial values are artificial. Public screenshots and demos should use this synthetic mode, not real Orbis-derived outputs.
 
 ## Methodology Summary
 
@@ -89,6 +91,20 @@ Run the Streamlit app:
 .\venv\Scripts\streamlit.exe run streamlit_app.py
 ```
 
+The app automatically uses real data when both confidential Orbis files are present locally. If they are absent, it falls back to the synthetic public-demo dataset. You can also force synthetic mode:
+
+```powershell
+$env:APP_DATA_MODE = "synthetic"
+.\venv\Scripts\streamlit.exe run streamlit_app.py
+```
+
+To force private real-data mode:
+
+```powershell
+$env:APP_DATA_MODE = "real"
+.\venv\Scripts\streamlit.exe run streamlit_app.py
+```
+
 Run tests:
 
 ```powershell
@@ -128,6 +144,7 @@ pfizer-tp-benchmark/
 +-- docs/
 +-- assets/
 +-- notebooks/
++-- scripts/
 ```
 
 ## Limitations

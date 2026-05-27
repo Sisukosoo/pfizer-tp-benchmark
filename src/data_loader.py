@@ -82,24 +82,30 @@ def load_orbis_export(path: Path | str) -> pd.DataFrame:
     return dataframe
 
 
-def load_tested_party() -> pd.DataFrame:
+def load_tested_party(data_mode: str | None = None) -> pd.DataFrame:
     """Load the Pfizer tested-party Orbis export from `data/raw/`.
+
+    Args:
+        data_mode: Optional data mode, `real` or `synthetic`.
 
     Returns:
         Cleaned tested-party DataFrame.
     """
 
-    return load_orbis_export(config.TESTED_PARTY_PATH)
+    return load_orbis_export(config.resolve_tested_party_path(data_mode))
 
 
-def load_comparables() -> pd.DataFrame:
+def load_comparables(data_mode: str | None = None) -> pd.DataFrame:
     """Load the comparables candidate Orbis export from `data/raw/`.
+
+    Args:
+        data_mode: Optional data mode, `real` or `synthetic`.
 
     Returns:
         Cleaned comparables candidate DataFrame.
     """
 
-    return load_orbis_export(config.COMPARABLES_PATH)
+    return load_orbis_export(config.resolve_comparables_path(data_mode))
 
 
 def extract_company_metadata(dataframe: pd.DataFrame) -> list[CompanyMetadata]:

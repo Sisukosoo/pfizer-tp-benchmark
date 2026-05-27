@@ -22,6 +22,8 @@ The baseline result is 10 accepted comparables, 45 rejected candidates, and 0 pe
 
 The Streamlit app presents the benchmarking study as a transparent workpaper rather than a black-box model. The Overview page identifies the tested party and summarizes the LRD-SM characterization. The Comparables page documents the rejection cascade from the raw Orbis population to the accepted comparable pool. The Analysis page then links the methodology to the quantitative result through an executive dashboard, base-case arm's-length range, sensitivity scenarios, and comparable-level PLI detail. The Report page converts the current benchmark state into an executive conclusion and downloadable Excel workpaper.
 
+The app supports two data modes. Private real-data mode uses local Orbis exports and a gitignored local decisions CSV. Public synthetic mode uses committed artificial workbooks in `data/synthetic/` and synthetic default decisions. The synthetic dataset is intended for public demos and screenshots; it should not be interpreted as Pfizer or Orbis-derived financial data.
+
 ## PLI Selection
 
 Operating Margin, defined as EBIT divided by Sales, is the primary Profit Level Indicator. It is appropriate for a sales and marketing distributor because it measures routine operating profitability relative to the sales base that the distributor manages. Pfizer Pharma GmbH is characterized as a Limited-Risk Distributor with Sales and Marketing functions (LRD-SM), so the analysis focuses on routine distributor returns rather than returns to manufacturing assets or pharmaceutical IP.

@@ -23,18 +23,11 @@ PERIOD_SCENARIOS = {
 }
 
 POOL_SCENARIOS = {
-    "All 10 comparables": [],
-    "Exclude smallest comparable (MICERIUM)": ["MICERIUM S.P.A."],
-    "Exclude two smallest (MICERIUM, BB FARMA)": ["MICERIUM S.P.A.", "BB FARMA SRL"],
-    "Exclude largest comparable (TEDIS)": ["TEDIS"],
-    "Exclude Italian regional distributors": [
-        "UFM - UNIONE FARMACEUTICA MITO S.R.L.",
-        "CLUB SALUTE S.P.A.",
-        "SAIMA S.P.A.",
-        "ALCYON ITALIA S.P.A.",
-        "BB FARMA SRL",
-        "MICERIUM S.P.A.",
-    ],
+    "All accepted comparables": ("none", 0),
+    "Exclude smallest comparable by revenue": ("smallest_revenue", 1),
+    "Exclude two smallest comparables by revenue": ("smallest_revenue", 2),
+    "Exclude largest comparable by revenue": ("largest_revenue", 1),
+    "Exclude lower-revenue quartile": ("smallest_revenue", 3),
 }
 
 
@@ -100,8 +93,8 @@ def run_all_scenarios(
             )
         )
 
-    for scenario_name, excluded_names in POOL_SCENARIOS.items():
-        scenario_comparables = _exclude_companies(comparables_df, excluded_names)
+    for scenario_name, strategy in POOL_SCENARIOS.items():
+        scenario_comparables = _exclude_by_pool_strategy(comparables_df, strategy)
         scenarios.append(
             _scenario(
                 group="Comparable pool",
@@ -181,17 +174,28 @@ def _scenario(
     }
 
 
-def _exclude_companies(
+def _exclude_by_pool_strategy(
     comparables_df: pd.DataFrame,
-    excluded_names: list[str],
+    strategy: tuple[str, int],
 ) -> pd.DataFrame:
-    """Return comparables excluding named companies."""
+    """Return comparables excluding rows selected by an objective strategy."""
 
-    if not excluded_names:
+    strategy_name, count = strategy
+    if strategy_name == "none" or count <= 0:
         return comparables_df.copy()
-    return comparables_df.loc[
-        ~comparables_df[config.COMPANY_NAME_COLUMN].isin(excluded_names)
-    ].copy()
+
+    revenue = pd.to_numeric(
+        comparables_df[config.LATEST_REVENUE_COLUMN],
+        errors="coerce",
+    )
+    if strategy_name == "smallest_revenue":
+        excluded_index = revenue.nsmallest(count).index
+    elif strategy_name == "largest_revenue":
+        excluded_index = revenue.nlargest(count).index
+    else:
+        return comparables_df.copy()
+
+    return comparables_df.drop(index=excluded_index).copy()
 
 
 def _base_period_label() -> str:

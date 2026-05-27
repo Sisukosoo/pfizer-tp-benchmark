@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -18,8 +19,20 @@ DECISIONS_CSV_PATH = PROCESSED_DATA_DIR / "comparables_decisions.csv"
 
 TESTED_PARTY_FILENAME = "Final_Pfizer_testedparty.xlsx"
 COMPARABLES_FILENAME = "Export_27_05_2026_13_13.xlsx"
+SYNTHETIC_TESTED_PARTY_FILENAME = "synthetic_tested_party.xlsx"
+SYNTHETIC_COMPARABLES_FILENAME = "synthetic_comparables.xlsx"
 TESTED_PARTY_PATH = RAW_DATA_DIR / TESTED_PARTY_FILENAME
 COMPARABLES_PATH = RAW_DATA_DIR / COMPARABLES_FILENAME
+SYNTHETIC_TESTED_PARTY_PATH = SYNTHETIC_DATA_DIR / SYNTHETIC_TESTED_PARTY_FILENAME
+SYNTHETIC_COMPARABLES_PATH = SYNTHETIC_DATA_DIR / SYNTHETIC_COMPARABLES_FILENAME
+
+DATA_MODE_ENV_VAR = "APP_DATA_MODE"
+DATA_MODE_REAL = "real"
+DATA_MODE_SYNTHETIC = "synthetic"
+DATA_MODE_OPTIONS = (DATA_MODE_REAL, DATA_MODE_SYNTHETIC)
+SYNTHETIC_DECISIONS_CSV_PATH = (
+    PROCESSED_DATA_DIR / "comparables_decisions_synthetic.csv"
+)
 
 ORBIS_RESULTS_SHEET = "Results"
 ORBIS_IGNORED_SHEET = "Search summary"
@@ -179,3 +192,38 @@ QUARTILE_METHOD = "linear"
 PFIZER_FY22_RESTRUCTURING_CHARGE_EUR_K = 71_930
 
 MISSING_VALUE_TOKENS = ("n.a.", "n.a", "N.A.", "N/A", "na", "-")
+
+
+def active_data_mode() -> str:
+    """Return the active data mode from environment or local file availability."""
+
+    requested_mode = os.getenv(DATA_MODE_ENV_VAR, "").strip().lower()
+    if requested_mode in DATA_MODE_OPTIONS:
+        return requested_mode
+    if TESTED_PARTY_PATH.exists() and COMPARABLES_PATH.exists():
+        return DATA_MODE_REAL
+    return DATA_MODE_SYNTHETIC
+
+
+def resolve_tested_party_path(data_mode: str | None = None) -> Path:
+    """Return tested-party workbook path for the selected data mode."""
+
+    if (data_mode or active_data_mode()) == DATA_MODE_SYNTHETIC:
+        return SYNTHETIC_TESTED_PARTY_PATH
+    return TESTED_PARTY_PATH
+
+
+def resolve_comparables_path(data_mode: str | None = None) -> Path:
+    """Return comparable-candidate workbook path for the selected data mode."""
+
+    if (data_mode or active_data_mode()) == DATA_MODE_SYNTHETIC:
+        return SYNTHETIC_COMPARABLES_PATH
+    return COMPARABLES_PATH
+
+
+def resolve_decisions_csv_path(data_mode: str | None = None) -> Path:
+    """Return mutable decisions CSV path for the selected data mode."""
+
+    if (data_mode or active_data_mode()) == DATA_MODE_SYNTHETIC:
+        return SYNTHETIC_DECISIONS_CSV_PATH
+    return DECISIONS_CSV_PATH
