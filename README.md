@@ -1,10 +1,71 @@
-# pfizer-tp-benchmark
+# Pfizer TP Benchmark
 
-Transfer Pricing benchmarking study for Pfizer Pharma GmbH using Orbis exports and OECD TNMM methodology.
+Python + Streamlit portfolio project for a transfer pricing benchmarking study of Pfizer Pharma GmbH.
 
-**Status:** Work in progress -- portfolio project for Big 4 TP applications.
+This is a student learning project by **Sisu Kosoo, TU München**. I built it to study transfer pricing more deeply, practice modelling financial indicators used in transfer pricing, and learn how tools such as Moody's Orbis, Python, OpenAI Codex, Claude, and Excel can be combined in an applied finance/tax workflow.
 
-Data files (Orbis exports) are not included in this repository due to licensing restrictions from TU Munich's Bureau van Dijk subscription. The analysis can be reproduced with equivalent Orbis exports placed in `data/raw/`.
+The project is not a statutory transfer pricing report or professional tax opinion. It is a reproducible educational workpaper and portfolio case.
+
+## Project Purpose
+
+The case benchmarks Pfizer Pharma GmbH as a tested party under the OECD Transactional Net Margin Method (TNMM). The app follows a realistic transfer pricing workflow:
+
+- define the tested-party profile using FAR analysis context
+- load confidential Orbis exports for the tested party and comparable candidates
+- document a rejection cascade from raw candidate companies to accepted comparables
+- calculate Profit Level Indicators (PLIs), especially Operating Margin
+- determine an arm's-length range using the interquartile range
+- run sensitivity scenarios
+- present visualizations and generate an Excel workpaper
+
+The main learning goal was to understand how transfer pricing methodology can be translated into transparent data modelling and reporting.
+
+## AI-Assisted Development
+
+This project was coded with the support of AI tools, especially **OpenAI Codex** and **Claude**. I used these tools to help design the project structure, implement Python modules, debug issues, improve Streamlit UI, and iterate on documentation.
+
+The methodological choices, project direction, data interpretation, and final review remain part of the learning process. AI was used as a coding and reasoning assistant, not as a substitute for understanding the transfer pricing concepts.
+
+## Data Notice
+
+Data files are not included in this repository.
+
+The Orbis exports used in the project are confidential under TU München's Moody's / Bureau van Dijk subscription. To reproduce the analysis, equivalent Orbis exports must be placed locally in `data/raw/`:
+
+- `Final_Pfizer_testedparty.xlsx`
+- `Export_27_05_2026_13_13.xlsx`
+
+The `.gitignore` is configured so raw Orbis files, processed decision state, generated reports, and generated figures are not committed.
+
+## Methodology Summary
+
+The analysis applies TNMM to a limited-risk distributor with sales and marketing functions (LRD-SM). Operating Margin, defined as EBIT / Sales, is the primary PLI. Berry Ratio and ROCE are retained as secondary checks.
+
+The comparable-company workflow starts from 55 EU/EFTA Orbis candidates selected around NACE 4646, wholesale of pharmaceutical goods. The rejection cascade excludes candidates with materially different functions, assets, risks, product-market exposure, ownership models, or data quality. The current baseline leaves 10 accepted comparables and 45 rejected candidates.
+
+Multi-year Operating Margin is calculated as a weighted ratio:
+
+```text
+sum(EBIT over selected years) / sum(Sales over selected years)
+```
+
+The base case uses FY22-FY24. The arm's-length range is calculated as the interquartile range of accepted comparable PLIs using linear quartiles. Sensitivity scenarios test period choice, PLI choice, outlier exclusions, Italian regional distributor exclusions, and Pfizer's FY22 restructuring normalization.
+
+## Current Features
+
+- Orbis Excel data loader with handling for Orbis workbook quirks
+- tested-party overview page
+- interactive comparables rejection cascade
+- accepted, rejected, and pending comparable pools
+- Operating Margin, Berry Ratio, and ROCE calculation engine
+- weighted multi-year PLI calculations
+- arm's-length range and tested-party positioning
+- sensitivity analysis
+- Plotly visualizations
+- methodology page
+- contextual About page
+- downloadable Excel workpaper
+- pytest test suite
 
 ## Setup
 
@@ -17,8 +78,10 @@ py -3.14 -m venv venv
 
 Place the Orbis exports in `data/raw/`:
 
-- `Final_Pfizer_testedparty.xlsx`
-- `Export_27_05_2026_13_13.xlsx`
+```text
+data/raw/Final_Pfizer_testedparty.xlsx
+data/raw/Export_27_05_2026_13_13.xlsx
+```
 
 Run the Streamlit app:
 
@@ -32,27 +95,12 @@ Run tests:
 .\venv\Scripts\python.exe -m pytest -v
 ```
 
-## Methodology
+Run linting and formatting checks:
 
-The project applies the Transactional Net Margin Method (TNMM), following the OECD Transfer Pricing Guidelines, to benchmark Pfizer Pharma GmbH against independent EU/EFTA pharmaceutical distributors selected from Orbis. The rejection cascade starts from 55 NACE 4646 candidates and applies functional comparability criteria to exclude entities whose functions, assets, risks, product segment, ownership model, or data quality differ materially from the tested party. This reflects the OECD TPG comparability focus, including paragraph 3.24 on practical comparability considerations in narrow markets. The current baseline leaves 10 accepted comparables for PLI and arm's length range analysis.
-
-Rejection categories:
-
-- `MANUFACTURER`: manufacturing functions and production assets are not comparable to a limited-risk distributor.
-- `COOPERATIVE`: pharmacy-owned cooperatives and consortia have structurally different economics.
-- `RETAIL`: retail pharmacies and online B2C channels perform consumer-facing functions.
-- `WRONG_SEGMENT`: non-pharma, veterinary, diagnostics, device, dental, packaging, or rehabilitation focus.
-- `HOLDING`: no relevant operating distribution activity.
-- `LOGISTICS`: service-provider logistics profile rather than principal distributor profile.
-- `BRAND_OWNER`: own-brand or IP-bearing pharmaceutical profile.
-- `MIXED_PORTFOLIO`: pharma distribution materially mixed with cosmetics, perfumes, devices, or own-marketed specialties.
-- `LOW_DATA_QUALITY`: insufficient evidence to validate functional comparability.
-
-## Analysis
-
-The analytical core applies OECD TPG Chapter II Part III TNMM logic. Operating Margin, EBIT / Sales, is the primary PLI because Pfizer Pharma GmbH is characterized as a limited-risk distributor with sales and marketing functions. Berry Ratio is used as a secondary check, and ROCE is read from Orbis as an additional capital-return indicator. Multi-year PLIs are weighted as sum(numerator) / sum(denominator), rather than averaging yearly ratios, to reduce volatility from one-off years. The default period is FY22-FY24, using Orbis `Last avail. yr`, `Year - 1`, and `Year - 2`. The arm's-length range is the interquartile range of accepted comparable PLIs using linear quartiles. Sensitivity scenarios test period choice, PLI choice, outlier exclusions, Italian regional distributor exclusions, and Pfizer's FY22 restructuring normalization.
-
-The app also includes a Report page that generates an executive conclusion and a downloadable Excel workpaper. The workbook contains overview, accepted comparables, rejected candidates, PLI detail, arm's-length range, sensitivity scenarios, and methodology notes. Generated reports are excluded from Git because they are derived from confidential Orbis inputs.
+```powershell
+.\venv\Scripts\python.exe -m ruff check .
+.\venv\Scripts\python.exe -m black --check .
+```
 
 ## Project Structure
 
@@ -78,11 +126,18 @@ pfizer-tp-benchmark/
 |   +-- figures/
 |   +-- reports/
 +-- docs/
++-- assets/
 +-- notebooks/
 ```
+
+## Limitations
+
+The comparable pool is small, and Pfizer Pharma GmbH is materially larger than the median accepted comparable. Independent multinational pharmaceutical distributors are scarce in Europe, so the analysis presents transparent assumptions and sensitivity checks rather than claiming mechanical certainty.
+
+The project is intended to demonstrate learning, methodology, and analytical implementation. It should not be relied on for tax compliance or professional advice.
 
 ## License
 
 MIT License.
 
-Author: Sisu Kosoo, TU Munich. Year: 2026.
+Author: Sisu Kosoo, TU München. Year: 2026.
