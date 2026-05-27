@@ -108,12 +108,12 @@ def _overview_page() -> None:
     latest_employees = row.get(config.LATEST_EMPLOYEES_COLUMN, pd.NA)
     st.subheader(str(row.get(config.COMPANY_NAME_COLUMN, "Tested party")))
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3 = st.columns(3)
     col1.metric("Country", _display_value(row.get(config.COUNTRY_COLUMN)))
-    col2.metric("NACE", _format_nace(row.get(config.NACE_COLUMN)))
-    col3.metric("Latest revenue", _format_revenue_millions(latest_revenue))
-    col4.metric("Employees (latest)", _format_number(latest_employees))
+    col2.metric("Latest revenue", _format_revenue_millions(latest_revenue))
+    col3.metric("Employees (latest)", _format_number(latest_employees))
 
+    st.markdown(f"**NACE:** {_format_nace(row.get(config.NACE_COLUMN))}")
     st.write(config.TESTED_PARTY_CHARACTERIZATION)
 
 
