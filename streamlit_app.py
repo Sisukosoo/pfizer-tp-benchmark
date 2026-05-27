@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import base64
+import html
+from pathlib import Path
+
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -106,21 +110,10 @@ def _overview_page() -> None:
     row = tested_party.iloc[0]
     latest_revenue = row.get(config.LATEST_REVENUE_COLUMN, pd.NA)
     latest_employees = row.get(config.LATEST_EMPLOYEES_COLUMN, pd.NA)
-
-    content_col, logo_col = st.columns([4, 1])
-    with content_col:
-        st.subheader(str(row.get(config.COMPANY_NAME_COLUMN, "Tested party")))
-
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Country", _display_value(row.get(config.COUNTRY_COLUMN)))
-        col2.metric("Latest revenue", _format_revenue_millions(latest_revenue))
-        col3.metric("Employees (latest)", _format_number(latest_employees))
-
-        st.markdown(f"**NACE:** {_format_nace(row.get(config.NACE_COLUMN))}")
-        st.write(config.TESTED_PARTY_CHARACTERIZATION)
-
-    with logo_col:
-        st.image(str(config.PFIZER_LOGO_PATH), use_container_width=True)
+    st.markdown(
+        _overview_hero_html(row, latest_revenue, latest_employees),
+        unsafe_allow_html=True,
+    )
 
 
 def _comparables_page() -> None:
@@ -669,6 +662,125 @@ def _show_missing_data_message() -> None:
     """Show a friendly message when confidential Orbis exports are absent."""
 
     st.info("Place Orbis exports in data/raw/ to proceed.")
+
+
+def _overview_hero_html(
+    row: pd.Series,
+    latest_revenue: object,
+    latest_employees: object,
+) -> str:
+    """Return the Overview hero HTML with a subtle background logo."""
+
+    logo_uri = _asset_data_uri(config.PFIZER_LOGO_PATH)
+    company = html.escape(str(row.get(config.COMPANY_NAME_COLUMN, "Tested party")))
+    country = html.escape(_display_value(row.get(config.COUNTRY_COLUMN)))
+    revenue = html.escape(_format_revenue_millions(latest_revenue))
+    employees = html.escape(_format_number(latest_employees))
+    nace = html.escape(_format_nace(row.get(config.NACE_COLUMN)))
+    characterization = html.escape(config.TESTED_PARTY_CHARACTERIZATION)
+
+    return f"""
+    <style>
+      .overview-hero {{
+        position: relative;
+        min-height: 360px;
+        padding: 1.25rem 0 3rem 0;
+        overflow: hidden;
+      }}
+      .overview-watermark {{
+        position: absolute;
+        left: 50%;
+        top: 48%;
+        width: min(78vw, 980px);
+        max-width: none;
+        transform: translate(-50%, -50%) rotate(-6deg);
+        opacity: 0.075;
+        pointer-events: none;
+        z-index: 0;
+      }}
+      .overview-content {{
+        position: relative;
+        z-index: 1;
+      }}
+      .overview-company {{
+        margin: 1.75rem 0 1.75rem 0;
+        font-size: 1.85rem;
+        line-height: 1.15;
+        font-weight: 700;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }}
+      .overview-metrics {{
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 3.5rem;
+        max-width: 980px;
+        margin: 0 0 1.75rem 0;
+      }}
+      .overview-label {{
+        margin-bottom: 0.45rem;
+        font-size: 0.95rem;
+        font-weight: 700;
+      }}
+      .overview-value {{
+        font-size: clamp(2rem, 3.1vw, 2.75rem);
+        line-height: 1.05;
+        font-weight: 400;
+        white-space: nowrap;
+      }}
+      .overview-note {{
+        max-width: 980px;
+        margin-top: 1.35rem;
+        font-size: 1.05rem;
+        line-height: 1.45;
+        font-weight: 600;
+      }}
+      @media (max-width: 760px) {{
+        .overview-hero {{
+          min-height: 520px;
+        }}
+        .overview-watermark {{
+          top: 60%;
+          width: 120vw;
+          opacity: 0.055;
+        }}
+        .overview-metrics {{
+          grid-template-columns: 1fr;
+          gap: 1.35rem;
+        }}
+      }}
+    </style>
+    <section class="overview-hero">
+      <img class="overview-watermark" src="{logo_uri}" alt="" />
+      <div class="overview-content">
+        <div class="overview-company">{company}</div>
+        <div class="overview-metrics">
+          <div>
+            <div class="overview-label">Country</div>
+            <div class="overview-value">{country}</div>
+          </div>
+          <div>
+            <div class="overview-label">Latest revenue</div>
+            <div class="overview-value">{revenue}</div>
+          </div>
+          <div>
+            <div class="overview-label">Employees (latest)</div>
+            <div class="overview-value">{employees}</div>
+          </div>
+        </div>
+        <div class="overview-note">NACE: {nace}</div>
+        <div class="overview-note">{characterization}</div>
+      </div>
+    </section>
+    """
+
+
+def _asset_data_uri(path: object) -> str:
+    """Return an SVG asset as an inline data URI."""
+
+    raw_bytes = Path(path).read_bytes()
+    encoded = base64.b64encode(raw_bytes).decode("ascii")
+    return f"data:image/svg+xml;base64,{encoded}"
 
 
 def _display_value(value: object) -> str:
