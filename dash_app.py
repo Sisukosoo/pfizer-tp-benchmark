@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+import plotly.graph_objects as go
 from dash import Dash, Input, Output, State, dash_table, dcc, html
 
 from src import config
@@ -36,6 +37,10 @@ from src.visualizations import (
 )
 
 APP_TITLE = "Pfizer TP Benchmark - Dash"
+GRAPH_CONFIG = {
+    "displayModeBar": False,
+    "responsive": True,
+}
 
 app = Dash(__name__, title=APP_TITLE, suppress_callback_exceptions=True)
 server = app.server
@@ -230,6 +235,7 @@ app.index_string = """
       }
       .panel {
         padding: 14px;
+        overflow: hidden;
       }
       .panel h2,
       .insight-card h2 {
@@ -254,6 +260,10 @@ app.index_string = """
       }
       .table-section h2 {
         margin: 0 0 12px 0;
+      }
+      .dash-graph {
+        border-radius: 6px;
+        overflow: hidden;
       }
       .error-panel {
         max-width: 760px;
@@ -508,8 +518,8 @@ def _dashboard(context: dict[str, Any], view: dict[str, Any]) -> html.Div:
                     html.Div(
                         [
                             html.H2(f"Arm's-Length Range - {pli_label}"),
-                            dcc.Graph(
-                                figure=arms_length_plot(
+                            _graph(
+                                arms_length_plot(
                                     result["comparables_pli"],
                                     float(result["tested_pli"]),
                                     f"{pli_label} Range",
@@ -534,8 +544,8 @@ def _dashboard(context: dict[str, Any], view: dict[str, Any]) -> html.Div:
                     html.Div(
                         [
                             html.H2("Comparable Ranking"),
-                            dcc.Graph(
-                                figure=sorted_comparables_bar(
+                            _graph(
+                                sorted_comparables_bar(
                                     result["comparables_detail"],
                                     float(result["tested_pli"]),
                                     range_dict,
@@ -548,7 +558,7 @@ def _dashboard(context: dict[str, Any], view: dict[str, Any]) -> html.Div:
                     html.Div(
                         [
                             html.H2("Sensitivity Ranges"),
-                            dcc.Graph(figure=sensitivity_range_plot(sensitivity)),
+                            _graph(sensitivity_range_plot(sensitivity)),
                         ],
                         className="panel",
                     ),
@@ -560,8 +570,8 @@ def _dashboard(context: dict[str, Any], view: dict[str, Any]) -> html.Div:
                     html.Div(
                         [
                             html.H2("Scale Check"),
-                            dcc.Graph(
-                                figure=revenue_vs_margin_scatter(
+                            _graph(
+                                revenue_vs_margin_scatter(
                                     result["comparables_detail"],
                                     float(tested_revenue),
                                     float(result["tested_pli"]),
@@ -573,8 +583,8 @@ def _dashboard(context: dict[str, Any], view: dict[str, Any]) -> html.Div:
                     html.Div(
                         [
                             html.H2("Tested Party Trend"),
-                            dcc.Graph(
-                                figure=tested_party_trend_plot(
+                            _graph(
+                                tested_party_trend_plot(
                                     _tested_party_trend_series(tested_party),
                                     title="Operating Margin Trend",
                                 )
@@ -767,6 +777,64 @@ def _table(dataframe: pd.DataFrame) -> dash_table.DataTable:
             "color": "#FFFFFF",
         },
     )
+
+
+def _graph(figure: go.Figure) -> dcc.Graph:
+    """Return a Dash graph with the dashboard visual theme applied."""
+
+    return dcc.Graph(
+        figure=_style_figure(figure),
+        config=GRAPH_CONFIG,
+        className="dash-graph",
+    )
+
+
+def _style_figure(figure: go.Figure) -> go.Figure:
+    """Apply a dark executive-dashboard theme to a Plotly figure."""
+
+    styled = go.Figure(figure)
+    styled.update_layout(
+        template="plotly_dark",
+        paper_bgcolor="#0B1117",
+        plot_bgcolor="#111827",
+        font={
+            "family": "Inter, Arial, sans-serif",
+            "color": "#E5E7EB",
+            "size": 12,
+        },
+        title={
+            "font": {"color": "#F8FAFC", "size": 15},
+            "x": 0.02,
+            "xanchor": "left",
+        },
+        legend={
+            "bgcolor": "rgba(11, 17, 23, 0)",
+            "font": {"color": "#D5DEE9", "size": 11},
+        },
+        margin={
+            "l": max(int(styled.layout.margin.l or 0), 30),
+            "r": max(int(styled.layout.margin.r or 0), 24),
+            "t": max(int(styled.layout.margin.t or 0), 54),
+            "b": max(int(styled.layout.margin.b or 0), 45),
+        },
+    )
+    styled.update_xaxes(
+        gridcolor="rgba(148, 163, 184, 0.16)",
+        zerolinecolor="rgba(226, 232, 240, 0.34)",
+        linecolor="rgba(148, 163, 184, 0.32)",
+        tickfont={"color": "#CBD5E1", "size": 11},
+        title_font={"color": "#E5E7EB", "size": 12},
+        automargin=True,
+    )
+    styled.update_yaxes(
+        gridcolor="rgba(148, 163, 184, 0.12)",
+        zerolinecolor="rgba(226, 232, 240, 0.28)",
+        linecolor="rgba(148, 163, 184, 0.28)",
+        tickfont={"color": "#CBD5E1", "size": 11},
+        title_font={"color": "#E5E7EB", "size": 12},
+        automargin=True,
+    )
+    return styled
 
 
 def _selected_comparables_frame(detail: pd.DataFrame, pli_type: str) -> pd.DataFrame:
