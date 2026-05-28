@@ -16,6 +16,7 @@ from src.pli_calculator import yearly_pli_table
 from src.sensitivity import run_all_scenarios, scenario_summary_frame
 
 REPORT_FILENAME = "pfizer_tp_benchmark_workpaper.xlsx"
+DECISIONS_FILENAME = "comparables_decisions.xlsx"
 REPORT_MIME_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
@@ -310,6 +311,39 @@ def methodology_notes_frame() -> pd.DataFrame:
         ),
     ]
     return pd.DataFrame(notes, columns=["Topic", "Note"])
+
+
+def build_decisions_workbook(decisions_df: pd.DataFrame) -> bytes:
+    """Build an Excel workbook for comparable-decision review.
+
+    Args:
+        decisions_df: Comparable-candidate decision state.
+
+    Returns:
+        XLSX workbook bytes with decisions and rejection-category notes.
+    """
+
+    category_rows = [
+        {
+            "reason": reason,
+            "label": metadata["label"],
+            "description": metadata["description"],
+        }
+        for reason, metadata in config.REJECT_CATEGORIES.items()
+    ]
+
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        decisions_df.to_excel(writer, sheet_name="Decisions", index=False)
+        pd.DataFrame(category_rows).to_excel(
+            writer,
+            sheet_name="Category Notes",
+            index=False,
+        )
+        _format_workbook(writer.book)
+
+    output.seek(0)
+    return output.read()
 
 
 def build_excel_report(

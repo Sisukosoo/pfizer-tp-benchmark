@@ -9,6 +9,7 @@ from openpyxl import load_workbook
 from src import config
 from src.default_decisions import make_decision_key
 from src.reporting import (
+    build_decisions_workbook,
     build_excel_report,
     build_report_context,
     executive_conclusion,
@@ -57,6 +58,20 @@ def test_excel_report_contains_expected_sheets(
         "Sensitivity Scenarios",
         "Methodology Notes",
     ]
+
+
+def test_decisions_workbook_opens_as_excel_columns(sample_comparables_df) -> None:
+    """Decision export should open in Excel as real columns, not comma text."""
+
+    decisions = _accept_all_decisions(sample_comparables_df)
+    workbook_bytes = build_decisions_workbook(decisions)
+    workbook = load_workbook(BytesIO(workbook_bytes), read_only=True)
+    worksheet = workbook["Decisions"]
+    headers = [cell.value for cell in next(worksheet.iter_rows(max_row=1))]
+
+    assert workbook_bytes.startswith(b"PK")
+    assert workbook.sheetnames == ["Decisions", "Category Notes"]
+    assert headers[:4] == ["bvd_id", "company_name", "country", "decision"]
 
 
 def _accept_all_decisions(sample_comparables_df):

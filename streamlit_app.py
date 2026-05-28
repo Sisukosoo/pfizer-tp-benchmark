@@ -25,9 +25,11 @@ from src.comparables import (
 from src.data_loader import load_comparables, load_tested_party
 from src.pli_calculator import operating_margin
 from src.reporting import (
+    DECISIONS_FILENAME,
     REPORT_FILENAME,
     REPORT_MIME_TYPE,
     accepted_comparables_frame,
+    build_decisions_workbook,
     build_excel_report,
     build_report_context,
     executive_conclusion,
@@ -372,6 +374,12 @@ def _comparables_page() -> None:
                 st.cache_data.clear()
                 st.rerun()
     with download_col:
+        st.download_button(
+            "Download decisions as Excel",
+            data=build_decisions_workbook(decisions),
+            file_name=DECISIONS_FILENAME,
+            mime=REPORT_MIME_TYPE,
+        )
         st.download_button(
             "Download decisions as CSV",
             data=decisions.to_csv(index=False).encode("utf-8"),
