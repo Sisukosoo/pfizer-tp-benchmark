@@ -121,6 +121,26 @@ def run_all_scenarios(
     return scenarios
 
 
+def apply_pool_scenario(
+    comparables_df: pd.DataFrame,
+    scenario_name: str,
+) -> pd.DataFrame:
+    """Apply a named comparable-pool sensitivity scenario.
+
+    Args:
+        comparables_df: Accepted comparable-company data.
+        scenario_name: Key from `POOL_SCENARIOS`.
+
+    Returns:
+        Comparable pool after applying the selected scenario.
+    """
+
+    return _exclude_by_pool_strategy(
+        comparables_df,
+        POOL_SCENARIOS.get(scenario_name, ("none", 0)),
+    )
+
+
 def scenario_summary_frame(scenarios: list[dict[str, Any]]) -> pd.DataFrame:
     """Convert scenario outputs into a Streamlit-friendly summary table.
 
