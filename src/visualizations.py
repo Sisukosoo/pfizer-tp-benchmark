@@ -175,10 +175,8 @@ def tested_party_trend_plot(
             go.Scatter(
                 x=adjusted.index,
                 y=adjusted,
-                mode="markers+text",
+                mode="markers",
                 name="Adjusted point",
-                text=["FY22 restructuring adjusted" for _ in adjusted.index],
-                textposition="top center",
                 marker={
                     "symbol": "diamond",
                     "size": 13,
@@ -188,14 +186,53 @@ def tested_party_trend_plot(
                 hovertemplate="%{x}<br>Adjusted OM: %{y:.2f}%<extra></extra>",
             )
         )
+        for year, value in adjusted.items():
+            figure.add_annotation(
+                x=year,
+                y=value,
+                text="FY22 adjusted for restructuring",
+                showarrow=True,
+                arrowhead=2,
+                ax=88,
+                ay=-34,
+                font={"size": 12, "color": "#F8FAFC"},
+                bgcolor="rgba(15, 23, 42, 0.82)",
+                bordercolor="rgba(255,255,255,0.18)",
+                borderpad=4,
+            )
 
+    y_min = max(float(display.min()) - 0.9, 0)
+    y_max = float(
+        max(
+            display.max(),
+            (
+                pd.Series(adjusted_points or {}, dtype=float).max() * 100
+                if adjusted_points
+                else display.max()
+            ),
+        )
+        + 0.8
+    )
     figure.update_layout(
         title=title,
         xaxis_title="Fiscal year",
         yaxis_title="Operating Margin (%)",
-        height=330,
-        margin={"l": 20, "r": 20, "t": 54, "b": 36},
+        height=390,
+        margin={"l": 72, "r": 42, "t": 58, "b": 56},
         hovermode="x unified",
+        legend={
+            "orientation": "h",
+            "x": 1,
+            "xanchor": "right",
+            "y": 1.08,
+            "yanchor": "bottom",
+        },
+    )
+    figure.update_xaxes(tickangle=0, gridcolor="rgba(255,255,255,0.10)")
+    figure.update_yaxes(
+        range=[y_min, y_max],
+        gridcolor="rgba(255,255,255,0.12)",
+        zeroline=False,
     )
     return figure
 
@@ -204,7 +241,7 @@ def sorted_comparables_bar(
     comparables_detail: pd.DataFrame,
     tested_pli: float,
     range_dict: dict[str, float | int],
-    title: str = "Accepted Comparables Weighted Operating Margin",
+    title: str = "Accepted Comparables - Weighted Operating Margin",
 ) -> go.Figure:
     """Return a sorted comparable-company PLI bar chart.
 
@@ -265,7 +302,11 @@ def sorted_comparables_bar(
         line_color="#DC2626",
         line_width=3,
     )
-    for label, key in [("Q1", "q1"), ("Median", "median"), ("Q3", "q3")]:
+    for label, key, y_position in [
+        ("Q1", "q1", 1.025),
+        ("Median", "median", 1.085),
+        ("Q3", "q3", 1.025),
+    ]:
         value = float(range_dict[key]) * 100
         figure.add_vline(
             x=value,
@@ -275,7 +316,7 @@ def sorted_comparables_bar(
         )
         figure.add_annotation(
             x=value,
-            y=1.03,
+            y=y_position,
             xref="x",
             yref="paper",
             text=label,
@@ -285,12 +326,12 @@ def sorted_comparables_bar(
         )
     figure.add_annotation(
         x=tested_value,
-        y=1.11,
+        y=1.15,
         xref="x",
         yref="paper",
-        text="Pfizer",
+        text="Pfizer OM",
         showarrow=False,
-        font={"size": 12, "color": "#FFFFFF"},
+        font={"size": 12, "color": "#FCA5A5"},
         xanchor="center",
     )
     axis_min = min(float(values.min()), q1, tested_value, 0) - 1
@@ -299,10 +340,10 @@ def sorted_comparables_bar(
         title=title,
         xaxis_title="Weighted Operating Margin (%)",
         yaxis_title="",
-        height=max(390, 33 * len(display) + 120),
-        margin={"l": 155, "r": 20, "t": 58, "b": 42},
+        height=max(470, 38 * len(display) + 150),
+        margin={"l": 240, "r": 34, "t": 88, "b": 58},
         showlegend=False,
-        bargap=0.22,
+        bargap=0.26,
     )
     figure.update_xaxes(
         range=[axis_min, axis_max],

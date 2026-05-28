@@ -548,27 +548,24 @@ def _render_executive_dashboard(
         unsafe_allow_html=True,
     )
 
-    trend_col, bar_col = st.columns([0.48, 0.52])
-    with trend_col:
-        st.plotly_chart(
-            tested_party_trend_plot(
-                _tested_party_trend_series(tested_party),
-                adjusted_points=_tested_party_adjusted_points(tested_party),
-                title="Pfizer Operating Margin Trend (FY2020-FY2024)",
-            ),
-            use_container_width=True,
-            config=PLOTLY_CONFIG,
-        )
-    with bar_col:
-        st.plotly_chart(
-            sorted_comparables_bar(
-                base_result["comparables_detail"],
-                float(base_result["tested_pli"]),
-                base_result["range"],
-            ),
-            use_container_width=True,
-            config=PLOTLY_CONFIG,
-        )
+    st.plotly_chart(
+        tested_party_trend_plot(
+            _tested_party_trend_series(tested_party),
+            adjusted_points=_tested_party_adjusted_points(tested_party),
+            title="Pfizer Operating Margin Trend (FY2020-FY2024)",
+        ),
+        use_container_width=True,
+        config=PLOTLY_CONFIG,
+    )
+    st.plotly_chart(
+        sorted_comparables_bar(
+            base_result["comparables_detail"],
+            float(base_result["tested_pli"]),
+            base_result["range"],
+        ),
+        use_container_width=True,
+        config=PLOTLY_CONFIG,
+    )
 
     sensitivity_summary = scenario_summary_frame(
         run_all_scenarios(
