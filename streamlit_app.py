@@ -53,6 +53,8 @@ st.set_page_config(
     layout="wide",
 )
 
+PLOTLY_CONFIG = {"displayModeBar": False, "responsive": True}
+
 
 @st.cache_data(show_spinner=False)
 def get_tested_party(data_mode: str) -> pd.DataFrame:
@@ -275,7 +277,11 @@ def _comparables_page() -> None:
         unsafe_allow_html=True,
     )
 
-    st.plotly_chart(_build_funnel_chart(stats), use_container_width=True)
+    st.plotly_chart(
+        _build_funnel_chart(stats),
+        use_container_width=True,
+        config=PLOTLY_CONFIG,
+    )
 
     accepted_tab, rejected_tab, edit_tab = st.tabs(
         [
@@ -543,6 +549,7 @@ def _render_executive_dashboard(
                 title="Pfizer Operating Margin Trend (FY2020-FY2024)",
             ),
             use_container_width=True,
+            config=PLOTLY_CONFIG,
         )
     with bar_col:
         st.plotly_chart(
@@ -552,6 +559,7 @@ def _render_executive_dashboard(
                 base_result["range"],
             ),
             use_container_width=True,
+            config=PLOTLY_CONFIG,
         )
 
     sensitivity_summary = scenario_summary_frame(
@@ -564,6 +572,7 @@ def _render_executive_dashboard(
     st.plotly_chart(
         sensitivity_range_plot(sensitivity_summary),
         use_container_width=True,
+        config=PLOTLY_CONFIG,
     )
 
     tested_revenue = pd.to_numeric(
@@ -577,6 +586,7 @@ def _render_executive_dashboard(
             float(base_result["tested_pli"]),
         ),
         use_container_width=True,
+        config=PLOTLY_CONFIG,
     )
     st.caption(
         "The revenue scatter is intentionally included as a limitation exhibit: "
@@ -636,6 +646,7 @@ def _render_base_case(result: dict[str, object]) -> None:
             "Operating Margin (%)",
         ),
         use_container_width=True,
+        config=PLOTLY_CONFIG,
     )
 
     st.dataframe(

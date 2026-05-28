@@ -419,32 +419,40 @@ def revenue_vs_margin_scatter(
 
     display = comparables_detail.dropna(subset=["weighted_pli"]).copy()
     display["Revenue EURm"] = display[config.LATEST_REVENUE_COLUMN] / 1_000
+    tested_revenue_eur_m = tested_revenue_eur_k / 1_000
+    tested_margin = tested_pli * 100
+    axis_max = max(float(display["Revenue EURm"].max()), tested_revenue_eur_m) * 1.12
+
     figure = go.Figure()
     figure.add_trace(
         go.Scatter(
             x=display["Revenue EURm"],
             y=display["weighted_pli"] * 100,
-            mode="markers+text",
+            mode="markers",
             name="Accepted comparables",
-            text=display[config.COMPANY_NAME_COLUMN],
-            textposition="top center",
-            marker={"size": 10, "color": "#2563EB", "opacity": 0.78},
+            customdata=display[config.COMPANY_NAME_COLUMN],
+            marker={
+                "size": 11,
+                "color": "#2563EB",
+                "opacity": 0.78,
+                "line": {"color": "rgba(255,255,255,0.35)", "width": 1},
+            },
             hovertemplate=(
-                "%{text}<br>Revenue: €%{x:.0f}M<br>" "OM: %{y:.2f}%<extra></extra>"
+                "%{customdata}<br>"
+                "Revenue: €%{x:.0f}M<br>"
+                "OM: %{y:.2f}%<extra></extra>"
             ),
         )
     )
     figure.add_trace(
         go.Scatter(
-            x=[tested_revenue_eur_k / 1_000],
-            y=[tested_pli * 100],
-            mode="markers+text",
+            x=[tested_revenue_eur_m],
+            y=[tested_margin],
+            mode="markers",
             name="Pfizer Pharma GmbH",
-            text=["Pfizer Pharma GmbH"],
-            textposition="top center",
             marker={
                 "symbol": "diamond",
-                "size": 15,
+                "size": 17,
                 "color": "#DC2626",
                 "line": {"color": "white", "width": 1},
             },
@@ -454,13 +462,40 @@ def revenue_vs_margin_scatter(
             ),
         )
     )
+    figure.add_annotation(
+        x=tested_revenue_eur_m,
+        y=tested_margin,
+        text="Pfizer Pharma GmbH",
+        showarrow=True,
+        arrowhead=2,
+        ax=-92,
+        ay=-34,
+        xanchor="right",
+        font={"size": 12, "color": "#F8FAFC"},
+        bgcolor="rgba(15, 23, 42, 0.78)",
+        bordercolor="rgba(255,255,255,0.18)",
+        borderpad=4,
+    )
     figure.update_layout(
         title=title,
         xaxis_title="Latest revenue (€M)",
         yaxis_title="Weighted Operating Margin (%)",
-        height=390,
-        margin={"l": 20, "r": 20, "t": 54, "b": 38},
+        height=430,
+        margin={"l": 82, "r": 112, "t": 58, "b": 56},
+        legend={
+            "orientation": "h",
+            "x": 1,
+            "xanchor": "right",
+            "y": 1.08,
+            "yanchor": "bottom",
+        },
     )
+    figure.update_xaxes(
+        range=[0, axis_max],
+        gridcolor="rgba(255,255,255,0.12)",
+        zeroline=False,
+    )
+    figure.update_yaxes(gridcolor="rgba(255,255,255,0.12)", zeroline=False)
     return figure
 
 
