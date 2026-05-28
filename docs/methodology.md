@@ -1,6 +1,6 @@
 # Methodology: TNMM Benchmarking Workflow
 
-This project benchmarks Pfizer Pharma GmbH as a tested party under the Transactional Net Margin Method (TNMM). The tested party is characterized as a Limited-Risk Distributor with Sales and Marketing functions (LRD-SM). The comparables workflow therefore seeks independent companies whose observed activity is broadly consistent with routine pharmaceutical distribution, while excluding entities with materially different functions, assets, risks, or product-market exposure.
+This project benchmarks Pfizer Pharma GmbH as a tested party under the Transactional Net Margin Method (TNMM). The tested party is characterized in the FAR memo as a Limited-Risk Distributor with Sales and Marketing functions (LRD-SM). The comparables workflow therefore seeks independent companies whose observed activity is broadly consistent with routine pharmaceutical distribution, while excluding entities with materially different functions, assets, risks, or product-market exposure.
 
 The starting population is a fixed Orbis export of 55 EU/EFTA candidates selected with NACE 4646, Wholesale of pharmaceutical goods, and independence filters. The rejection cascade records the manual functional review as a reproducible decision ledger. Defaults are stored in `src/default_decisions.py`; runtime overrides are stored separately in `data/processed/comparables_decisions.csv`, which is intentionally gitignored because it is generated state.
 
@@ -22,17 +22,17 @@ The baseline result is 10 accepted comparables, 45 rejected candidates, and 0 pe
 
 The Streamlit app presents the benchmarking study as a transparent workpaper rather than a black-box model. The Overview page identifies the tested party and summarizes the LRD-SM characterization. The Comparables page documents the rejection cascade from the raw Orbis population to the accepted comparable pool. The Analysis page then links the methodology to the quantitative result through an executive dashboard, base-case arm's-length range, sensitivity scenarios, and comparable-level PLI detail. The Report page converts the current benchmark state into an executive conclusion and downloadable Excel workpaper.
 
-The app supports two data modes. Private real-data mode uses local Orbis exports and a gitignored local decisions CSV. Public synthetic mode uses committed artificial workbooks in `data/synthetic/` and synthetic default decisions. The synthetic dataset is intended for public demos and screenshots; it should not be interpreted as Pfizer or Orbis-derived financial data.
+The app supports two data modes. Private real-data mode uses local Orbis exports and a gitignored local decisions CSV. Public synthetic mode uses committed artificial workbooks in `data/synthetic/` and synthetic default decisions. The synthetic dataset is intended for public demos and screenshots; it should not be interpreted as Pfizer or Orbis-derived financial data. Public screenshots should be taken only when the sidebar displays `Data mode: Synthetic (public demo)`.
 
 ## PLI Selection
 
 Operating Margin, defined as EBIT divided by Sales, is the primary Profit Level Indicator. It is appropriate for a sales and marketing distributor because it measures routine operating profitability relative to the sales base that the distributor manages. Pfizer Pharma GmbH is characterized as a Limited-Risk Distributor with Sales and Marketing functions (LRD-SM), so the analysis focuses on routine distributor returns rather than returns to manufacturing assets or pharmaceutical IP.
 
-Berry Ratio, defined as Gross Profit divided by operating expenses, is retained as a secondary check. In this project, operating expenses are derived as Sales minus EBIT minus Material Costs because the Orbis export does not provide a direct Other Operating Expenses line. This captures personnel, depreciation/amortization, and other operating expenses from available income-statement lines. ROCE using P/L before tax is read from Orbis and used as an additional capital-return indicator, not as the primary tested PLI.
+Berry Ratio, defined as Gross Profit divided by operating expenses, is retained only as a diagnostic sensitivity check. The FAR memo notes that Berry Ratio is less suitable as the primary PLI for a principal goods distributor that holds inventory risk and has a structurally high gross margin. In this project, operating expenses are derived as Sales minus EBIT minus Material Costs because the Orbis export does not provide a direct Other Operating Expenses line. This captures personnel, depreciation/amortization, and other operating expenses from available income-statement lines. ROCE using P/L before tax is read from Orbis and used as an additional capital-return indicator, but the FAR memo treats ROCE as non-primary because the capital base is distorted by cash-pool participation and capital structure movements.
 
 ## Multi-Year Weighting
 
-The base case uses a three-year period: FY22, FY23, and FY24, represented in Orbis as `Year - 2`, `Year - 1`, and `Last avail. yr`. Operating Margin and Berry Ratio are calculated as weighted multi-year ratios: sum(numerator) divided by sum(denominator). This avoids giving a small or anomalous year the same weight as a larger year. Missing or zero-denominator observations are excluded from the relevant weighted ratio rather than forcing a distorted result.
+The base case uses a three-year period: FY22, FY23, and FY24, represented in Orbis as `Year - 2`, `Year - 1`, and `Last avail. yr`. This matches the FAR memo's conclusion that FY20 and FY21 do not fully represent the entity's current operational scope after intra-group restructurings. Operating Margin and Berry Ratio are calculated as weighted multi-year ratios: sum(numerator) divided by sum(denominator). This avoids giving a small or anomalous year the same weight as a larger year. Missing or zero-denominator observations are excluded from the relevant weighted ratio rather than forcing a distorted result.
 
 ## Arm's-Length Range
 
@@ -40,7 +40,17 @@ The arm's-length range is constructed as the interquartile range of the accepted
 
 ## Sensitivity and Limitations
 
-The sensitivity tab tests period choice, PLI choice, outlier exclusions, exclusion of Italian regional distributors, and an optional Pfizer FY22 EBIT normalization for the EUR 71.9M restructuring charge described in the FAR memo. These scenarios are not separate conclusions; they are diagnostic checks on the robustness of the base case.
+The sensitivity tab tests period choice, PLI choice, outlier exclusions, exclusion of Italian regional distributors, and an optional Pfizer FY22 EBIT normalization for the EUR 71.9M restructuring charge described in the FAR memo. The sensitivity design also reflects the FAR memo's discussion of FY22 Paxlovid dynamics and the need to read that year carefully. These scenarios are not separate conclusions; they are diagnostic checks on the robustness of the base case.
+
+## FAR Memo Alignment
+
+The app follows the FAR memo's core methodological conclusions:
+
+- Pfizer Pharma GmbH is treated as an LRD-SM, not as a manufacturer, IP owner, commissionaire, or pure logistics provider.
+- The benchmark is performed at EBIT level, with cash-pooling and FX hedging scoped out as separate financial transactions.
+- Operating Margin is the primary PLI because the tested party is a sales and marketing distributor.
+- FY22-FY24 is the base period because earlier years are affected by changes in operational scope.
+- FY22 is shown with sensitivity because the year includes both Paxlovid dynamics and a EUR 71.9M restructuring charge.
 
 The current comparable pool is methodologically useful but not perfect. Pfizer Pharma GmbH is materially larger than the median comparable, and independent multinational pharmaceutical distributors are scarce in Europe. Several accepted comparables are Italian regional distributors, which may have lower margins than manufacturer-side distributors. The app therefore presents the result as a transparent TNMM benchmark with explicit limitations rather than as a mechanically definitive arm's-length conclusion.
 

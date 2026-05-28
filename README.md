@@ -39,9 +39,20 @@ The `.gitignore` is configured so raw Orbis files, processed decision state, gen
 
 The repository includes a synthetic public-demo dataset in `data/synthetic/`. It is structurally similar to the Orbis exports used by the app, but the company names and financial values are artificial. Public screenshots and demos should use this synthetic mode, not real Orbis-derived outputs.
 
+## Public Demo Mode
+
+Before recording screenshots, running a public demo, or making the repository public, launch the app in synthetic mode:
+
+```powershell
+$env:APP_DATA_MODE = "synthetic"
+.\venv\Scripts\streamlit.exe run streamlit_app.py
+```
+
+The sidebar should show `Data mode: Synthetic (public demo)`. Do not use screenshots from private real-data mode in public materials. Generated screenshots and workpapers under `output/` are gitignored because they may be derived from local confidential data.
+
 ## Methodology Summary
 
-The analysis applies TNMM to a limited-risk distributor with sales and marketing functions (LRD-SM). Operating Margin, defined as EBIT / Sales, is the primary PLI. Berry Ratio and ROCE are retained as secondary checks.
+The analysis applies TNMM to a limited-risk distributor with sales and marketing functions (LRD-SM). Operating Margin, defined as EBIT / Sales, is the primary PLI. Berry Ratio and ROCE are used only as diagnostic sensitivity checks, not as alternative primary conclusions.
 
 The comparable-company workflow starts from 55 EU/EFTA Orbis candidates selected around NACE 4646, wholesale of pharmaceutical goods. The rejection cascade excludes candidates with materially different functions, assets, risks, product-market exposure, ownership models, or data quality. The current baseline leaves 10 accepted comparables and 45 rejected candidates.
 
@@ -51,7 +62,7 @@ Multi-year Operating Margin is calculated as a weighted ratio:
 sum(EBIT over selected years) / sum(Sales over selected years)
 ```
 
-The base case uses FY22-FY24. The arm's-length range is calculated as the interquartile range of accepted comparable PLIs using linear quartiles. Sensitivity scenarios test period choice, PLI choice, outlier exclusions, Italian regional distributor exclusions, and Pfizer's FY22 restructuring normalization.
+The base case uses FY22-FY24, consistent with the FAR memo's view that FY20-FY21 do not fully represent the entity's current operational scope. The arm's-length range is calculated as the interquartile range of accepted comparable PLIs using linear quartiles. Sensitivity scenarios test period choice, PLI choice, outlier exclusions, Italian regional distributor exclusions, and Pfizer's FY22 restructuring normalization.
 
 ## Current Features
 
@@ -116,6 +127,12 @@ Run linting and formatting checks:
 ```powershell
 .\venv\Scripts\python.exe -m ruff check .
 .\venv\Scripts\python.exe -m black --check .
+```
+
+Run the public-release safety audit:
+
+```powershell
+.\venv\Scripts\python.exe scripts\public_release_audit.py
 ```
 
 ## Project Structure

@@ -74,7 +74,7 @@ def main() -> None:
     with st.sidebar:
         st.title("Pfizer TP Benchmark")
         current_mode = _selected_data_mode()
-        st.caption(f"Data mode: {current_mode.title()}")
+        st.caption(f"Data mode: {_data_mode_label(current_mode)}")
         if st.button("Refresh data"):
             st.cache_data.clear()
             st.rerun()
@@ -94,6 +94,14 @@ def _selected_data_mode() -> str:
     """Return the current Streamlit data mode."""
 
     return config.active_data_mode()
+
+
+def _data_mode_label(data_mode: str) -> str:
+    """Return a user-facing data mode label."""
+
+    if data_mode == config.DATA_MODE_SYNTHETIC:
+        return "Synthetic (public demo)"
+    return "Real Orbis (private local)"
 
 
 def _data_files_available(data_mode: str) -> bool:
@@ -892,7 +900,8 @@ def _about_page_html() -> str:
           This is a student learning and portfolio project by Sisu Kosonen at TU
           München. It uses Pfizer Pharma GmbH as a realistic case to practice
           transfer pricing benchmarking, OECD TNMM logic, Orbis data handling,
-          Python analytics, and Streamlit reporting.
+          Python analytics, and Streamlit reporting. Public demos use artificial
+          synthetic data rather than confidential Orbis exports.
         </p>
         <div class="about-grid">
           <div class="about-section">
@@ -914,10 +923,10 @@ def _about_page_html() -> str:
           <div class="about-section">
             <h3>Data boundaries</h3>
             <p>
-              The analysis uses Orbis exports for Pfizer Pharma GmbH and 55
-              EU/EFTA NACE 4646 candidate comparables. Source files are
-              confidential under TU München's Bureau van Dijk subscription and
-              are not committed to Git.
+              The private workflow uses local Orbis exports for Pfizer Pharma
+              GmbH and 55 EU/EFTA NACE 4646 candidate comparables. Public demo
+              mode uses artificial synthetic workbooks, so screenshots and
+              demos can be shared without exposing licensed source data.
             </p>
           </div>
           <div class="about-section">
