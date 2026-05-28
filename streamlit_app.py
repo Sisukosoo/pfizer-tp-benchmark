@@ -71,6 +71,8 @@ def get_comparables(data_mode: str) -> pd.DataFrame:
 def main() -> None:
     """Render the Streamlit application."""
 
+    _inject_global_styles()
+
     with st.sidebar:
         st.title("Pfizer TP Benchmark")
         current_mode = _selected_data_mode()
@@ -113,6 +115,92 @@ def _data_files_available(data_mode: str) -> bool:
     )
 
 
+def _inject_global_styles() -> None:
+    """Inject small layout styles shared across Streamlit pages."""
+
+    st.markdown(
+        """
+        <style>
+          .block-container {
+            padding-top: 3.4rem;
+            padding-bottom: 3rem;
+            max-width: 1180px;
+          }
+          h1, h2, h3 {
+            letter-spacing: 0;
+          }
+          .page-lede {
+            max-width: 920px;
+            margin: 0.35rem 0 1.35rem 0;
+            font-size: 1.02rem;
+            line-height: 1.55;
+            opacity: 0.94;
+          }
+          .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.9rem;
+            margin: 1.2rem 0 1.35rem 0;
+          }
+          .kpi-card {
+            min-height: 94px;
+            padding: 0.9rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 7px;
+            background: rgba(255, 255, 255, 0.025);
+          }
+          .kpi-card-highlight {
+            border-color: rgba(0, 159, 218, 0.55);
+            background: rgba(0, 159, 218, 0.08);
+          }
+          .kpi-label {
+            margin-bottom: 0.35rem;
+            font-size: 0.82rem;
+            font-weight: 720;
+            line-height: 1.25;
+            opacity: 0.86;
+          }
+          .kpi-value {
+            font-size: clamp(1.45rem, 2.4vw, 2.05rem);
+            line-height: 1.12;
+            font-weight: 520;
+            letter-spacing: 0;
+            overflow-wrap: anywhere;
+          }
+          @media (max-width: 900px) {
+            .kpi-grid {
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+          }
+          @media (max-width: 560px) {
+            .kpi-grid {
+              grid-template-columns: 1fr;
+            }
+          }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _kpi_grid_html(
+    items: list[tuple[str, str]],
+    highlight_index: int | None = None,
+) -> str:
+    """Return reusable KPI card markup."""
+
+    cards = []
+    for index, (label, value) in enumerate(items):
+        extra_class = " kpi-card-highlight" if index == highlight_index else ""
+        cards.append(f"""
+            <div class="kpi-card{extra_class}">
+              <div class="kpi-label">{html.escape(label)}</div>
+              <div class="kpi-value">{html.escape(value)}</div>
+            </div>
+            """)
+    return f'<div class="kpi-grid">{"".join(cards)}</div>'
+
+
 def _overview_page() -> None:
     """Render the overview page."""
 
@@ -146,12 +234,15 @@ def _comparables_page() -> None:
     """Render the comparables page."""
 
     st.header("Comparables")
-    st.write(
-        "This page shows the comparables selection process. From an initial pool "
-        "of 55 candidates retrieved from Orbis with NACE 4646 (Wholesale of "
-        "pharmaceutical goods), Independence A+B, EU/EFTA geography, the rejection "
-        "cascade applies functional comparability criteria to identify the final "
-        "pool of accepted comparables."
+    st.markdown(
+        """
+        <p class="page-lede">
+          This page documents the comparables selection process. The candidate
+          pool starts from 55 EU/EFTA NACE 4646 companies and applies functional
+          comparability criteria to identify the final accepted pool.
+        </p>
+        """,
+        unsafe_allow_html=True,
     )
 
     data_mode = _selected_data_mode()
@@ -171,11 +262,18 @@ def _comparables_page() -> None:
     pending = get_pending(comparables, decisions)
     stats = compute_cascade_stats(decisions, raw_count=len(comparables))
 
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Raw candidates", f"{stats['raw']:,}")
-    col2.metric("Rejected", f"{stats['rejected']:,}")
-    col3.metric("Pending", f"{len(pending):,}")
-    col4.metric("Final pool", f"{stats['accepted']:,}")
+    st.markdown(
+        _kpi_grid_html(
+            [
+                ("Raw candidates", f"{stats['raw']:,}"),
+                ("Rejected", f"{stats['rejected']:,}"),
+                ("Pending", f"{len(pending):,}"),
+                ("Final pool", f"{stats['accepted']:,}"),
+            ],
+            highlight_index=3,
+        ),
+        unsafe_allow_html=True,
+    )
 
     st.plotly_chart(_build_funnel_chart(stats), use_container_width=True)
 
@@ -368,13 +466,21 @@ def _report_page() -> None:
 
     result = context["base_result"]
     range_dict = result["range"]
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Primary PLI", str(result["pli_label"]))
-    col2.metric(
-        "Pfizer OM", _format_pli_value(result["tested_pli"], result["pli_type"])
+    st.markdown(
+        _kpi_grid_html(
+            [
+                ("Primary PLI", str(result["pli_label"])),
+                (
+                    "Tested party OM",
+                    _format_pli_value(result["tested_pli"], result["pli_type"]),
+                ),
+                ("IQR", _format_iqr_label(range_dict, str(result["pli_type"]))),
+                ("Conclusion", _position_label(result["position"]["position"])),
+            ],
+            highlight_index=3,
+        ),
+        unsafe_allow_html=True,
     )
-    col3.metric("IQR", _format_iqr_label(range_dict, str(result["pli_type"])))
-    col4.metric("Conclusion", _position_label(result["position"]["position"]))
 
     st.subheader("Executive conclusion")
     st.markdown(executive_conclusion(context))
@@ -417,13 +523,18 @@ def _render_executive_dashboard(
     """Render the executive analytics dashboard."""
 
     st.subheader("Executive Analytics Dashboard")
-    st.write(
-        "These visuals connect the FAR memo, rejection cascade, and TNMM result: "
-        "Pfizer's own margin trend, the accepted comparable ranking, sensitivity "
-        "ranges, and the size mismatch between Pfizer and the accepted pool."
+    st.markdown(
+        """
+        <p class="page-lede">
+          These visuals connect the FAR memo, rejection cascade, and TNMM result:
+          tested-party margin development, comparable ranking, sensitivity
+          ranges, and the size mismatch limitation.
+        </p>
+        """,
+        unsafe_allow_html=True,
     )
 
-    trend_col, bar_col = st.columns(2)
+    trend_col, bar_col = st.columns([0.48, 0.52])
     with trend_col:
         st.plotly_chart(
             tested_party_trend_plot(
@@ -486,9 +597,35 @@ def _render_base_case(result: dict[str, object]) -> None:
         st.warning("Benchmark result is malformed.")
         return
 
-    st.metric(
-        "Pfizer Pharma GmbH weighted Operating Margin",
-        _format_pli_value(float(result["tested_pli"]), config.PLI_OPERATING_MARGIN),
+    st.markdown(
+        _kpi_grid_html(
+            [
+                (
+                    "Tested party OM",
+                    _format_pli_value(
+                        float(result["tested_pli"]),
+                        config.PLI_OPERATING_MARGIN,
+                    ),
+                ),
+                (
+                    "Q1",
+                    _format_pli_value(range_dict["q1"], config.PLI_OPERATING_MARGIN),
+                ),
+                (
+                    "Median",
+                    _format_pli_value(
+                        range_dict["median"],
+                        config.PLI_OPERATING_MARGIN,
+                    ),
+                ),
+                (
+                    "Q3",
+                    _format_pli_value(range_dict["q3"], config.PLI_OPERATING_MARGIN),
+                ),
+            ],
+            highlight_index=0,
+        ),
+        unsafe_allow_html=True,
     )
 
     st.plotly_chart(
@@ -713,8 +850,8 @@ def _overview_hero_html(
     <style>
       .overview-hero {{
         position: relative;
-        min-height: 360px;
-        padding: 1.25rem 0 3rem 0;
+        min-height: 315px;
+        padding: 0.65rem 0 2rem 0;
         overflow: hidden;
       }}
       .overview-watermark {{
@@ -733,7 +870,7 @@ def _overview_hero_html(
         z-index: 1;
       }}
       .overview-company {{
-        margin: 1.75rem 0 1.75rem 0;
+        margin: 1.35rem 0 1.45rem 0;
         font-size: 1.85rem;
         line-height: 1.15;
         font-weight: 700;
@@ -745,7 +882,7 @@ def _overview_hero_html(
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 3.5rem;
         max-width: 980px;
-        margin: 0 0 1.75rem 0;
+        margin: 0 0 1.35rem 0;
       }}
       .overview-label {{
         margin-bottom: 0.45rem;
@@ -760,7 +897,7 @@ def _overview_hero_html(
       }}
       .overview-note {{
         max-width: 980px;
-        margin-top: 1.35rem;
+        margin-top: 1.05rem;
         font-size: 1.05rem;
         line-height: 1.45;
         font-weight: 600;
@@ -813,8 +950,8 @@ def _about_page_html() -> str:
     <style>
       .about-hero {{
         position: relative;
-        min-height: 620px;
-        padding: 1rem 0 4rem 0;
+        min-height: 540px;
+        padding: 0.35rem 0 2.5rem 0;
         overflow: hidden;
       }}
       .about-watermark {{
@@ -834,7 +971,7 @@ def _about_page_html() -> str:
         max-width: 1120px;
       }}
       .about-title {{
-        margin: 1.4rem 0 1rem 0;
+        margin: 0.7rem 0 0.9rem 0;
         font-size: 2.65rem;
         line-height: 1.1;
         font-weight: 750;
@@ -842,17 +979,17 @@ def _about_page_html() -> str:
       }}
       .about-lede {{
         max-width: 900px;
-        margin: 0 0 2.25rem 0;
-        font-size: 1.18rem;
+        margin: 0 0 1.8rem 0;
+        font-size: 1.08rem;
         line-height: 1.55;
         font-weight: 500;
       }}
       .about-grid {{
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 1.65rem 3rem;
+        gap: 1.35rem 2.4rem;
         max-width: 1040px;
-        margin-top: 1.5rem;
+        margin-top: 1.1rem;
       }}
       .about-section {{
         border-left: 3px solid rgba(0, 159, 218, 0.68);
@@ -871,7 +1008,7 @@ def _about_page_html() -> str:
       }}
       .about-footer {{
         max-width: 980px;
-        margin-top: 2.6rem;
+        margin-top: 1.8rem;
         padding-top: 1.15rem;
         border-top: 1px solid rgba(255, 255, 255, 0.16);
         font-size: 0.95rem;
@@ -1090,8 +1227,9 @@ def _build_funnel_chart(stats: dict[str, object]) -> go.Figure:
         )
     )
     figure.update_layout(
-        margin={"l": 20, "r": 20, "t": 20, "b": 20},
-        height=520,
+        margin={"l": 150, "r": 20, "t": 6, "b": 8},
+        height=390,
+        font={"size": 11},
     )
     return figure
 

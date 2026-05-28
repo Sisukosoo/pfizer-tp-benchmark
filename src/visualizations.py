@@ -132,8 +132,8 @@ def arms_length_plot(
         xaxis_title=pli_label,
         yaxis_title="",
         xaxis={"range": [axis_min, axis_max]},
-        height=430,
-        margin={"l": 20, "r": 20, "t": 60, "b": 40},
+        height=350,
+        margin={"l": 20, "r": 20, "t": 46, "b": 34},
         showlegend=True,
     )
     return figure
@@ -193,8 +193,8 @@ def tested_party_trend_plot(
         title=title,
         xaxis_title="Fiscal year",
         yaxis_title="Operating Margin (%)",
-        height=390,
-        margin={"l": 20, "r": 20, "t": 60, "b": 40},
+        height=330,
+        margin={"l": 20, "r": 20, "t": 54, "b": 36},
         hovermode="x unified",
     )
     return figure
@@ -299,10 +299,10 @@ def sorted_comparables_bar(
         title=title,
         xaxis_title="Weighted Operating Margin (%)",
         yaxis_title="",
-        height=max(520, 44 * len(display) + 160),
-        margin={"l": 170, "r": 30, "t": 90, "b": 65},
+        height=max(390, 33 * len(display) + 120),
+        margin={"l": 155, "r": 20, "t": 58, "b": 42},
         showlegend=False,
-        bargap=0.28,
+        bargap=0.22,
     )
     figure.update_xaxes(
         range=[axis_min, axis_max],
@@ -393,8 +393,8 @@ def sensitivity_range_plot(
         title=title,
         xaxis_title="PLI (%)",
         yaxis_title="",
-        height=max(420, 42 * len(display)),
-        margin={"l": 20, "r": 20, "t": 60, "b": 40},
+        height=max(390, 34 * len(display)),
+        margin={"l": 20, "r": 20, "t": 54, "b": 36},
     )
     return figure
 
@@ -458,8 +458,8 @@ def revenue_vs_margin_scatter(
         title=title,
         xaxis_title="Latest revenue (€M)",
         yaxis_title="Weighted Operating Margin (%)",
-        height=430,
-        margin={"l": 20, "r": 20, "t": 60, "b": 40},
+        height=390,
+        margin={"l": 20, "r": 20, "t": 54, "b": 38},
     )
     return figure
 
