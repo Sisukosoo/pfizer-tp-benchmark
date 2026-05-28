@@ -194,12 +194,12 @@ def _kpi_grid_html(
     cards = []
     for index, (label, value) in enumerate(items):
         extra_class = " kpi-card-highlight" if index == highlight_index else ""
-        cards.append(f"""
-            <div class="kpi-card{extra_class}">
-              <div class="kpi-label">{html.escape(label)}</div>
-              <div class="kpi-value">{html.escape(value)}</div>
-            </div>
-            """)
+        cards.append(
+            f'<div class="kpi-card{extra_class}">'
+            f'<div class="kpi-label">{html.escape(label)}</div>'
+            f'<div class="kpi-value">{html.escape(value)}</div>'
+            "</div>"
+        )
     return f'<div class="kpi-grid">{"".join(cards)}</div>'
 
 
