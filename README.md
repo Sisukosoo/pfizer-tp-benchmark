@@ -64,6 +64,7 @@ The base case uses FY22-FY24. The arm's-length range is calculated as the interq
 - arm's-length range and tested-party positioning
 - sensitivity analysis
 - Plotly visualizations
+- parallel Dash by Plotly prototype
 - methodology page
 - contextual About page
 - downloadable Excel workpaper
@@ -90,6 +91,14 @@ Run the Streamlit app:
 ```powershell
 .\venv\Scripts\streamlit.exe run streamlit_app.py
 ```
+
+Run the parallel Dash by Plotly prototype:
+
+```powershell
+.\venv\Scripts\python.exe dash_app.py
+```
+
+Then open `http://127.0.0.1:8050`.
 
 The app automatically uses real data when both confidential Orbis files are present locally. If they are absent, it falls back to the synthetic public-demo dataset. You can also force synthetic mode:
 
