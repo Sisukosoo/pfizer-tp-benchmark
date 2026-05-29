@@ -30,10 +30,7 @@ The methodological choices, project direction, data interpretation, and final re
 
 Real Orbis data files are not included in this repository. A fresh clone from GitHub contains only the folder placeholder `data/raw/.gitkeep`, not the confidential Excel exports.
 
-The Orbis exports used in the private local version are confidential under TU München's Moody's / Bureau van Dijk subscription. To reproduce the analysis privately, equivalent Orbis exports must be placed manually on the user's own machine in `data/raw/`:
-
-- `Final_Pfizer_testedparty.xlsx`
-- `Export_27_05_2026_13_13.xlsx`
+The Orbis exports used in the private local version are confidential under TU München's Moody's / Bureau van Dijk subscription. They are not distributed, documented as downloadable inputs, or required for the public version of this repository.
 
 The `.gitignore` is configured so raw Orbis files, processed decision state, generated reports, and generated figures are not committed or pushed to GitHub.
 
@@ -106,6 +103,8 @@ The base case uses FY22-FY24, consistent with the FAR memo's view that FY20-FY21
 
 ## Setup
 
+A clean public clone runs with the included synthetic demo dataset. No Orbis files are needed.
+
 ```powershell
 git clone https://github.com/Sisukosoo/pfizer-tp-benchmark.git
 cd pfizer-tp-benchmark
@@ -113,32 +112,14 @@ py -3.14 -m venv venv
 .\venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 ```
 
-Place the Orbis exports in `data/raw/`:
-
-```text
-data/raw/Final_Pfizer_testedparty.xlsx
-data/raw/Export_27_05_2026_13_13.xlsx
-```
-
-Run the Streamlit app:
-
-```powershell
-.\venv\Scripts\streamlit.exe run streamlit_app.py
-```
-
-The app automatically uses real data when both confidential Orbis files are present locally. If they are absent, it falls back to the synthetic public-demo dataset. You can also force synthetic mode:
+Run the Streamlit app in public synthetic mode:
 
 ```powershell
 $env:APP_DATA_MODE = "synthetic"
 .\venv\Scripts\streamlit.exe run streamlit_app.py
 ```
 
-To force private real-data mode:
-
-```powershell
-$env:APP_DATA_MODE = "real"
-.\venv\Scripts\streamlit.exe run streamlit_app.py
-```
+The sidebar should show `Data mode: Synthetic (public demo)`.
 
 Run tests:
 
