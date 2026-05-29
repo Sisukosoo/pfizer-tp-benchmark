@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import base64
 import html
-from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -456,7 +454,7 @@ def _report_page() -> None:
 
     st.header("Report")
     st.write(
-        "This page turns the current benchmark state into an interview-ready "
+        "This page turns the current benchmark state into a learning-oriented "
         "executive summary and a downloadable Excel workpaper."
     )
     data_mode = _selected_data_mode()
@@ -852,9 +850,8 @@ def _overview_hero_html(
     latest_revenue: object,
     latest_employees: object,
 ) -> str:
-    """Return the Overview hero HTML with a subtle background logo."""
+    """Return the Overview hero HTML."""
 
-    logo_uri = _asset_data_uri(config.PFIZER_LOGO_PATH)
     company = html.escape(str(row.get(config.COMPANY_NAME_COLUMN, "Tested party")))
     country = html.escape(_display_value(row.get(config.COUNTRY_COLUMN)))
     revenue = html.escape(_format_revenue_millions(latest_revenue))
@@ -869,17 +866,6 @@ def _overview_hero_html(
         min-height: 315px;
         padding: 0.65rem 0 2rem 0;
         overflow: hidden;
-      }}
-      .overview-watermark {{
-        position: absolute;
-        left: 50%;
-        top: 48%;
-        width: min(78vw, 980px);
-        max-width: none;
-        transform: translate(-50%, -50%) rotate(-6deg);
-        opacity: 0.075;
-        pointer-events: none;
-        z-index: 0;
       }}
       .overview-content {{
         position: relative;
@@ -922,11 +908,6 @@ def _overview_hero_html(
         .overview-hero {{
           min-height: 520px;
         }}
-        .overview-watermark {{
-          top: 60%;
-          width: 120vw;
-          opacity: 0.055;
-        }}
         .overview-metrics {{
           grid-template-columns: 1fr;
           gap: 1.35rem;
@@ -934,7 +915,6 @@ def _overview_hero_html(
       }}
     </style>
     <section class="overview-hero">
-      <img class="overview-watermark" src="{logo_uri}" alt="" />
       <div class="overview-content">
         <div class="overview-company">{company}</div>
         <div class="overview-metrics">
@@ -959,70 +939,58 @@ def _overview_hero_html(
 
 
 def _about_page_html() -> str:
-    """Return the About page HTML with context and a subtle watermark."""
+    """Return the About page HTML with context."""
 
-    logo_uri = _asset_data_uri(config.PFIZER_LOGO_PATH)
-    return f"""
+    return """
     <style>
-      .about-hero {{
+      .about-hero {
         position: relative;
         min-height: 540px;
         padding: 0.35rem 0 2.5rem 0;
         overflow: hidden;
-      }}
-      .about-watermark {{
-        position: absolute;
-        left: 50%;
-        top: 52%;
-        width: min(82vw, 1040px);
-        max-width: none;
-        transform: translate(-50%, -50%) rotate(-6deg);
-        opacity: 0.055;
-        pointer-events: none;
-        z-index: 0;
-      }}
-      .about-content {{
+      }
+      .about-content {
         position: relative;
         z-index: 1;
         max-width: 1120px;
-      }}
-      .about-title {{
+      }
+      .about-title {
         margin: 0.7rem 0 0.9rem 0;
         font-size: 2.65rem;
         line-height: 1.1;
         font-weight: 750;
         letter-spacing: 0;
-      }}
-      .about-lede {{
+      }
+      .about-lede {
         max-width: 900px;
         margin: 0 0 1.8rem 0;
         font-size: 1.08rem;
         line-height: 1.55;
         font-weight: 500;
-      }}
-      .about-grid {{
+      }
+      .about-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 1.35rem 2.4rem;
         max-width: 1040px;
         margin-top: 1.1rem;
-      }}
-      .about-section {{
+      }
+      .about-section {
         border-left: 3px solid rgba(0, 159, 218, 0.68);
         padding-left: 1rem;
-      }}
-      .about-section h3 {{
+      }
+      .about-section h3 {
         margin: 0 0 0.45rem 0;
         font-size: 1.08rem;
         line-height: 1.25;
         font-weight: 760;
-      }}
-      .about-section p {{
+      }
+      .about-section p {
         margin: 0;
         font-size: 0.98rem;
         line-height: 1.55;
-      }}
-      .about-footer {{
+      }
+      .about-footer {
         max-width: 980px;
         margin-top: 1.8rem;
         padding-top: 1.15rem;
@@ -1030,27 +998,22 @@ def _about_page_html() -> str:
         font-size: 0.95rem;
         line-height: 1.55;
         opacity: 0.92;
-      }}
-      @media (max-width: 760px) {{
-        .about-hero {{
+      }
+      @media (max-width: 760px) {
+        .about-hero {
           min-height: 820px;
-        }}
-        .about-watermark {{
-          width: 128vw;
-          opacity: 0.045;
-        }}
-        .about-grid {{
+        }
+        .about-grid {
           grid-template-columns: 1fr;
           gap: 1.3rem;
-        }}
-      }}
+        }
+      }
     </style>
     <section class="about-hero">
-      <img class="about-watermark" src="{logo_uri}" alt="" />
       <div class="about-content">
         <div class="about-title">About</div>
         <p class="about-lede">
-          This is a student learning and portfolio project by Sisu Kosonen at TU
+          This is a student learning project by Sisu Kosonen at TU
           München. It uses Pfizer Pharma GmbH as a realistic case to practice
           transfer pricing benchmarking, OECD TNMM logic, Orbis data handling,
           Python analytics, and Streamlit reporting. Public demos use artificial
@@ -1060,9 +1023,10 @@ def _about_page_html() -> str:
           <div class="about-section">
             <h3>Why this project exists</h3>
             <p>
-              The goal is to show how an accounting and finance student can
-              translate transfer pricing methodology into a reproducible
-              analytical workflow suitable for Big 4 interview discussion.
+              The goal is to deepen my understanding of transfer pricing by
+              translating the methodology into a reproducible analytical
+              workflow with Python, Orbis-style data, Streamlit, Excel, and AI
+              coding tools.
             </p>
           </div>
           <div class="about-section">
@@ -1093,20 +1057,12 @@ def _about_page_html() -> str:
         </div>
         <div class="about-footer">
           This is not a statutory transfer pricing report or professional tax
-          opinion. It is an educational portfolio project designed to make the
+          opinion. It is an educational learning project designed to make the
           reasoning, assumptions, limitations, and calculations visible.
         </div>
       </div>
     </section>
     """
-
-
-def _asset_data_uri(path: object) -> str:
-    """Return an SVG asset as an inline data URI."""
-
-    raw_bytes = Path(path).read_bytes()
-    encoded = base64.b64encode(raw_bytes).decode("ascii")
-    return f"data:image/svg+xml;base64,{encoded}"
 
 
 def _display_value(value: object) -> str:

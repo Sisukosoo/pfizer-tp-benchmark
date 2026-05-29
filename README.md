@@ -1,10 +1,10 @@
 # Pfizer TP Benchmark
 
-Python + Streamlit portfolio project for a transfer pricing benchmarking study of Pfizer Pharma GmbH.
+Python + Streamlit learning project for a transfer pricing benchmarking study of Pfizer Pharma GmbH.
 
 This is a student learning project by **Sisu Kosonen, TU München**. I built it to study transfer pricing more deeply, practice modelling financial indicators used in transfer pricing, and learn how tools such as Moody's Orbis, Python, OpenAI Codex, Claude, and Excel can be combined in an applied finance/tax workflow.
 
-The project is not a statutory transfer pricing report or professional tax opinion. It is a reproducible educational workpaper and portfolio case.
+The project is a reproducible educational workpaper created to deepen practical understanding of transfer pricing methodology and financial modelling. It is not a statutory transfer pricing report or professional tax opinion.
 
 ## Project Purpose
 
@@ -28,27 +28,51 @@ The methodological choices, project direction, data interpretation, and final re
 
 ## Data Notice
 
-Real Orbis data files are not included in this repository.
+Real Orbis data files are not included in this repository. A fresh clone from GitHub contains only the folder placeholder `data/raw/.gitkeep`, not the confidential Excel exports.
 
-The Orbis exports used in the project are confidential under TU München's Moody's / Bureau van Dijk subscription. To reproduce the analysis, equivalent Orbis exports must be placed locally in `data/raw/`:
+The Orbis exports used in the private local version are confidential under TU München's Moody's / Bureau van Dijk subscription. To reproduce the analysis privately, equivalent Orbis exports must be placed manually on the user's own machine in `data/raw/`:
 
 - `Final_Pfizer_testedparty.xlsx`
 - `Export_27_05_2026_13_13.xlsx`
 
-The `.gitignore` is configured so raw Orbis files, processed decision state, generated reports, and generated figures are not committed.
+The `.gitignore` is configured so raw Orbis files, processed decision state, generated reports, and generated figures are not committed or pushed to GitHub.
 
 The repository includes a synthetic public-demo dataset in `data/synthetic/`. It is structurally similar to the Orbis exports used by the app, but the company names and financial values are artificial. Public screenshots and demos should use this synthetic mode, not real Orbis-derived outputs.
 
 ## Public Demo Mode
 
-Before recording screenshots, running a public demo, or making the repository public, launch the app in synthetic mode:
+Before recording screenshots, running a public demo, or making the repository public, launch the app in synthetic mode. This ensures the app uses the committed artificial dataset instead of any private files that may exist only on the author's local machine:
 
 ```powershell
 $env:APP_DATA_MODE = "synthetic"
 .\venv\Scripts\streamlit.exe run streamlit_app.py
 ```
 
-The sidebar should show `Data mode: Synthetic (public demo)`. Do not use screenshots from private real-data mode in public materials. Generated screenshots and workpapers under `output/` are gitignored because they may be derived from local confidential data.
+The sidebar should show `Data mode: Synthetic (public demo)`. Do not use screenshots from private real-data mode in public materials. Generated screenshots and workpapers under `output/` are gitignored because local outputs may be derived from confidential data.
+
+## Screenshots
+
+All screenshots below use synthetic public-demo data.
+
+![Overview page](docs/screenshots/01_overview.png)
+
+Overview page showing the synthetic tested-party profile.
+
+![Comparables page](docs/screenshots/02_comparables.png)
+
+Comparables page showing the synthetic rejection cascade and decision workflow.
+
+![Analysis page](docs/screenshots/03_analysis.png)
+
+Analysis page showing synthetic PLI charts, sensitivity ranges, and comparable ranking.
+
+![Report page](docs/screenshots/04_report.png)
+
+Report page showing the synthetic executive summary and Excel workpaper export view.
+
+![About page](docs/screenshots/05_about.png)
+
+About page describing the project as a student learning project.
 
 ## Methodology Summary
 
@@ -168,7 +192,7 @@ pfizer-tp-benchmark/
 
 The comparable pool is small, and Pfizer Pharma GmbH is materially larger than the median accepted comparable. Independent multinational pharmaceutical distributors are scarce in Europe, so the analysis presents transparent assumptions and sensitivity checks rather than claiming mechanical certainty.
 
-The project is intended to demonstrate learning, methodology, and analytical implementation. It should not be relied on for tax compliance or professional advice.
+The project is intended for learning and competence development in transfer pricing methodology, analytical modelling, and tooling. It should not be relied on for tax compliance or professional advice.
 
 ## License
 

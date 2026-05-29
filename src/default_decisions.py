@@ -16,16 +16,16 @@ from src import config
 DEFAULT_MODIFIED_AT = datetime(2026, 5, 27, tzinfo=UTC).isoformat()
 
 ACCEPTED_DEMO_COMPANIES: tuple[tuple[str, str], ...] = (
-    ("Demo Pharma Distribution GmbH", "Germany"),
-    ("Nordic Rx Wholesale AB", "Sweden"),
-    ("Alpine Medicines Trading AG", "Austria"),
-    ("Iberia Pharma Supply SL", "Spain"),
-    ("Baltic Health Distribution OÜ", "Estonia"),
-    ("Benelux Medicines Wholesale BV", "Netherlands"),
-    ("Adriatic Pharma Trade SRL", "Italy"),
-    ("Central Europe Rx Sp zoo", "Poland"),
-    ("Lusitania Pharma Logistics SA", "Portugal"),
-    ("Danube Healthcare Wholesale Kft", "Hungary"),
+    ("Demo Comparable 01 GmbH", "Germany"),
+    ("Demo Comparable 02 AB", "Sweden"),
+    ("Demo Comparable 03 AG", "Austria"),
+    ("Demo Comparable 04 SL", "Spain"),
+    ("Demo Comparable 05 OU", "Estonia"),
+    ("Demo Comparable 06 BV", "Netherlands"),
+    ("Demo Comparable 07 SRL", "Italy"),
+    ("Demo Comparable 08 Sp zoo", "Poland"),
+    ("Demo Comparable 09 SA", "Portugal"),
+    ("Demo Comparable 10 Kft", "Hungary"),
 )
 
 REJECTED_DEMO_COUNTS: dict[str, int] = {

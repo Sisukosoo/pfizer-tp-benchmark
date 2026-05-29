@@ -13,8 +13,6 @@ SYNTHETIC_DATA_DIR = DATA_DIR / "synthetic"
 OUTPUT_DIR = PROJECT_ROOT / "output"
 FIGURES_DIR = OUTPUT_DIR / "figures"
 REPORTS_DIR = OUTPUT_DIR / "reports"
-ASSETS_DIR = PROJECT_ROOT / "assets"
-PFIZER_LOGO_PATH = ASSETS_DIR / "pfizer_logo.svg"
 DECISIONS_CSV_PATH = PROCESSED_DATA_DIR / "comparables_decisions.csv"
 
 TESTED_PARTY_FILENAME = "Final_Pfizer_testedparty.xlsx"
