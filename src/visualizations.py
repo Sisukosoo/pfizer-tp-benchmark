@@ -14,6 +14,7 @@ def arms_length_plot(
     tested_pli: float,
     title: str,
     pli_label: str = "Operating Margin (%)",
+    tested_party_name: str = config.REAL_TESTED_PARTY_DISPLAY_NAME,
 ) -> go.Figure:
     """Return a Plotly figure showing range and tested-party position.
 
@@ -22,6 +23,7 @@ def arms_length_plot(
         tested_pli: Tested-party PLI observation.
         title: Chart title.
         pli_label: X-axis label.
+        tested_party_name: Display name for the tested party.
 
     Returns:
         Plotly box-and-marker figure.
@@ -99,8 +101,8 @@ def arms_length_plot(
             x=[tested_value],
             y=["Accepted comparables"],
             mode="markers+text",
-            name="Pfizer Pharma GmbH",
-            text=["Pfizer Pharma GmbH"],
+            name=tested_party_name,
+            text=[tested_party_name],
             textposition="top center",
             marker={
                 "symbol": "diamond",
@@ -108,7 +110,8 @@ def arms_length_plot(
                 "color": "#DC2626",
                 "line": {"color": "white", "width": 1},
             },
-            hovertemplate="Pfizer Pharma GmbH<br>"
+            hovertemplate=tested_party_name
+            + "<br>"
             + pli_label
             + ": %{x:.2f}<extra></extra>",
         )
@@ -142,7 +145,7 @@ def arms_length_plot(
 def tested_party_trend_plot(
     yearly_pli: pd.Series,
     adjusted_points: dict[str, float] | None = None,
-    title: str = "Pfizer Operating Margin Trend",
+    title: str = "Tested Party Operating Margin Trend",
 ) -> go.Figure:
     """Return a line chart for tested-party yearly PLI development.
 
@@ -242,6 +245,7 @@ def sorted_comparables_bar(
     tested_pli: float,
     range_dict: dict[str, float | int],
     title: str = "Accepted Comparables - Weighted Operating Margin",
+    tested_party_name: str = config.REAL_TESTED_PARTY_DISPLAY_NAME,
 ) -> go.Figure:
     """Return a sorted comparable-company PLI bar chart.
 
@@ -250,6 +254,7 @@ def sorted_comparables_bar(
         tested_pli: Tested-party weighted PLI as a decimal.
         range_dict: Arm's-length range statistics.
         title: Chart title.
+        tested_party_name: Display name for the tested party.
 
     Returns:
         Plotly bar chart.
@@ -329,7 +334,7 @@ def sorted_comparables_bar(
         y=1.15,
         xref="x",
         yref="paper",
-        text="Pfizer OM",
+        text=f"{tested_party_name} OM",
         showarrow=False,
         font={"size": 12, "color": "#FCA5A5"},
         xanchor="center",
@@ -365,13 +370,15 @@ def _short_company_name(company_name: object, max_length: int = 30) -> str:
 
 def sensitivity_range_plot(
     summary: pd.DataFrame,
-    title: str = "Sensitivity Ranges Compared to Pfizer",
+    title: str = "Sensitivity Ranges Compared to Tested Party",
+    tested_party_name: str = config.REAL_TESTED_PARTY_DISPLAY_NAME,
 ) -> go.Figure:
     """Return a scenario range chart with tested-party markers.
 
     Args:
         summary: Scenario summary table from `scenario_summary_frame`.
         title: Chart title.
+        tested_party_name: Display name for the tested party.
 
     Returns:
         Plotly range chart.
@@ -426,8 +433,10 @@ def sensitivity_range_plot(
                 "size": 11,
                 "line": {"color": "white", "width": 1},
             },
-            name="Pfizer",
-            hovertemplate="%{y}<br>Pfizer: %{x:.2f}%<extra></extra>",
+            name=tested_party_name,
+            hovertemplate=(
+                "%{y}<br>" + tested_party_name + ": %{x:.2f}%<extra></extra>"
+            ),
         )
     )
     figure.update_layout(
@@ -445,6 +454,7 @@ def revenue_vs_margin_scatter(
     tested_revenue_eur_k: float,
     tested_pli: float,
     title: str = "Revenue Size vs Weighted Operating Margin",
+    tested_party_name: str = config.REAL_TESTED_PARTY_DISPLAY_NAME,
 ) -> go.Figure:
     """Return a scatter plot showing size mismatch and profitability.
 
@@ -453,6 +463,7 @@ def revenue_vs_margin_scatter(
         tested_revenue_eur_k: Tested-party latest sales in thousand EUR.
         tested_pli: Tested-party weighted PLI as a decimal.
         title: Chart title.
+        tested_party_name: Display name for the tested party.
 
     Returns:
         Plotly scatter plot.
@@ -490,23 +501,21 @@ def revenue_vs_margin_scatter(
             x=[tested_revenue_eur_m],
             y=[tested_margin],
             mode="markers",
-            name="Pfizer Pharma GmbH",
+            name=tested_party_name,
             marker={
                 "symbol": "diamond",
                 "size": 17,
                 "color": "#DC2626",
                 "line": {"color": "white", "width": 1},
             },
-            hovertemplate=(
-                "Pfizer Pharma GmbH<br>Revenue: €%{x:.0f}M<br>"
-                "OM: %{y:.2f}%<extra></extra>"
-            ),
+            hovertemplate=tested_party_name + "<br>Revenue: €%{x:.0f}M<br>"
+            "OM: %{y:.2f}%<extra></extra>",
         )
     )
     figure.add_annotation(
         x=tested_revenue_eur_m,
         y=tested_margin,
-        text="Pfizer Pharma GmbH",
+        text=tested_party_name,
         showarrow=True,
         arrowhead=2,
         ax=-92,

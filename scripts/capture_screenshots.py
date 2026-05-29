@@ -289,6 +289,12 @@ def _assert_safe_synthetic_page(page: Page, title: str) -> None:
         joined = ", ".join(leaked_names)
         raise RuntimeError(f"{title}: private comparable name(s) visible: {joined}")
 
+    non_project_text = body_text.replace("Pfizer TP Benchmark", "")
+    if title != "About" and "PFIZER" in non_project_text.upper():
+        raise RuntimeError(
+            f"{title}: synthetic output contains a Pfizer label outside the app title."
+        )
+
 
 def _expand_streamlit_scroll_area(page: Page) -> int:
     """Let Playwright full-page screenshots include Streamlit's scroll container."""

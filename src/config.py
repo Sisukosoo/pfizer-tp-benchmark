@@ -31,6 +31,8 @@ DATA_MODE_OPTIONS = (DATA_MODE_REAL, DATA_MODE_SYNTHETIC)
 SYNTHETIC_DECISIONS_CSV_PATH = (
     PROCESSED_DATA_DIR / "comparables_decisions_synthetic.csv"
 )
+REAL_TESTED_PARTY_DISPLAY_NAME = "Pfizer Pharma GmbH"
+SYNTHETIC_TESTED_PARTY_DISPLAY_NAME = "Demo Tested Party GmbH"
 
 ORBIS_RESULTS_SHEET = "Results"
 ORBIS_IGNORED_SHEET = "Search summary"
@@ -201,6 +203,14 @@ def active_data_mode() -> str:
     if TESTED_PARTY_PATH.exists() and COMPARABLES_PATH.exists():
         return DATA_MODE_REAL
     return DATA_MODE_SYNTHETIC
+
+
+def tested_party_display_name(data_mode: str | None = None) -> str:
+    """Return the display name for the tested party in the selected data mode."""
+
+    if (data_mode or active_data_mode()) == DATA_MODE_SYNTHETIC:
+        return SYNTHETIC_TESTED_PARTY_DISPLAY_NAME
+    return REAL_TESTED_PARTY_DISPLAY_NAME
 
 
 def resolve_tested_party_path(data_mode: str | None = None) -> Path:

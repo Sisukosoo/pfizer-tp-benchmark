@@ -24,6 +24,7 @@ def build_report_context(
     tested_party_df: pd.DataFrame,
     raw_comparables_df: pd.DataFrame,
     decisions_df: pd.DataFrame,
+    tested_party_name: str | None = None,
 ) -> dict[str, Any]:
     """Build the shared data context for the report page and Excel export.
 
@@ -31,12 +32,14 @@ def build_report_context(
         tested_party_df: Tested-party Orbis data.
         raw_comparables_df: Raw Orbis comparable-candidate data.
         decisions_df: Comparable-candidate decision state.
+        tested_party_name: Optional display name for tested-party labels.
 
     Returns:
         Dictionary with base benchmark results, cascade data, and sensitivity
         outputs used by both Streamlit and Excel.
     """
 
+    display_name = tested_party_name or config.tested_party_display_name()
     accepted = get_accepted(raw_comparables_df, decisions_df)
     rejected = get_rejected(raw_comparables_df, decisions_df)
     base_result = run_benchmark(
@@ -49,8 +52,10 @@ def build_report_context(
         tested_party_df=tested_party_df,
         comparables_df=accepted,
         include_fy22_adjustment=True,
+        tested_party_name=display_name,
     )
     return {
+        "tested_party_name": display_name,
         "tested_party": tested_party_df,
         "raw_comparables": raw_comparables_df,
         "decisions": decisions_df,
@@ -86,6 +91,7 @@ def executive_conclusion(context: dict[str, Any]) -> str:
     q1 = _format_percent(range_dict["q1"])
     median = _format_percent(range_dict["median"])
     q3 = _format_percent(range_dict["q3"])
+    tested_party_name = context["tested_party_name"]
 
     sensitivity = context["sensitivity_summary"]
     changed = sensitivity.loc[sensitivity["Position"] != position, "Scenario"].tolist()
@@ -101,17 +107,18 @@ def executive_conclusion(context: dict[str, Any]) -> str:
         )
 
     return (
-        f"Pfizer Pharma GmbH is characterized as an LRD-SM and tested under "
+        f"{tested_party_name} is characterized as an LRD-SM and tested under "
         f"TNMM using Operating Margin as the primary PLI over {period}. "
         f"The rejection cascade narrows the Orbis candidate pool from "
         f"{stats['raw']} companies to {stats['accepted']} accepted comparables. "
-        f"Pfizer's weighted Operating Margin is {tested_pli}, compared with an "
+        f"{tested_party_name}'s weighted Operating Margin is {tested_pli}, "
+        f"compared with an "
         f"interquartile range of {q1} to {q3} and median of {median}. "
         f"On this base case, the tested party is **{conclusion}**. "
         f"{sensitivity_sentence} The result should be read with the documented "
-        "limitations: the accepted pool is small, Pfizer is materially larger "
-        "than the median comparable, and independent multinational pharma "
-        "distributors are scarce in Europe."
+        f"limitations: the accepted pool is small, {tested_party_name} is "
+        "materially larger than the median comparable, and independent "
+        "multinational pharma distributors are scarce in Europe."
     )
 
 
@@ -126,13 +133,14 @@ def overview_frame(context: dict[str, Any]) -> pd.DataFrame:
     """
 
     tested_party = context["tested_party"]
+    tested_party_name = context["tested_party_name"]
     result = context["base_result"]
     stats = context["cascade_stats"]
     row = tested_party.iloc[0]
     nace = _format_nace(row.get(config.NACE_COLUMN))
     return pd.DataFrame(
         [
-            ("Tested party", row.get(config.COMPANY_NAME_COLUMN, "Pfizer Pharma GmbH")),
+            ("Tested party", row.get(config.COMPANY_NAME_COLUMN, tested_party_name)),
             ("Country", row.get(config.COUNTRY_COLUMN, "Germany")),
             ("NACE", nace),
             ("Characterization", "Limited-Risk Distributor with Sales and Marketing"),
@@ -167,7 +175,10 @@ def range_frame(context: dict[str, Any]) -> pd.DataFrame:
             ("Q3 (75th percentile)", range_dict["q3"]),
             ("Maximum", range_dict["max"]),
             ("IQR width", range_dict["iqr_width"]),
-            ("Pfizer weighted OM", context["base_result"]["tested_pli"]),
+            (
+                f"{context['tested_party_name']} weighted OM",
+                context["base_result"]["tested_pli"],
+            ),
         ],
         columns=["Metric", "Value"],
     )
@@ -272,17 +283,20 @@ def sensitivity_frame(context: dict[str, Any]) -> pd.DataFrame:
     return summary
 
 
-def methodology_notes_frame() -> pd.DataFrame:
+def methodology_notes_frame(
+    tested_party_name: str | None = None,
+) -> pd.DataFrame:
     """Return methodology notes for the Excel report.
 
     Returns:
         Methodology notes DataFrame.
     """
 
+    display_name = tested_party_name or config.tested_party_display_name()
     notes = [
         (
             "Tested party",
-            "Pfizer Pharma GmbH is characterized as an LRD-SM based on the FAR memo.",
+            f"{display_name} is characterized as an LRD-SM based on the FAR memo.",
         ),
         (
             "Primary method",
@@ -306,8 +320,9 @@ def methodology_notes_frame() -> pd.DataFrame:
         ),
         (
             "Limitations",
-            "The accepted pool is small and Pfizer is materially larger than the "
-            "accepted comparable pool; results should be read with this caveat.",
+            f"The accepted pool is small and {display_name} is materially larger "
+            "than the accepted comparable pool; results should be read with this "
+            "caveat.",
         ),
     ]
     return pd.DataFrame(notes, columns=["Topic", "Note"])
@@ -350,6 +365,7 @@ def build_excel_report(
     tested_party_df: pd.DataFrame,
     raw_comparables_df: pd.DataFrame,
     decisions_df: pd.DataFrame,
+    tested_party_name: str | None = None,
 ) -> bytes:
     """Build the downloadable Excel workpaper.
 
@@ -357,12 +373,18 @@ def build_excel_report(
         tested_party_df: Tested-party Orbis data.
         raw_comparables_df: Raw Orbis comparable-candidate data.
         decisions_df: Comparable-candidate decision state.
+        tested_party_name: Optional display name for tested-party labels.
 
     Returns:
         XLSX workbook bytes.
     """
 
-    context = build_report_context(tested_party_df, raw_comparables_df, decisions_df)
+    context = build_report_context(
+        tested_party_df,
+        raw_comparables_df,
+        decisions_df,
+        tested_party_name=tested_party_name,
+    )
     sheets = {
         "Overview": overview_frame(context),
         "Accepted Comparables": accepted_comparables_frame(context),
@@ -370,7 +392,7 @@ def build_excel_report(
         "PLI Detail": pli_detail_frame(context),
         "Arm's-Length Range": range_frame(context),
         "Sensitivity Scenarios": sensitivity_frame(context),
-        "Methodology Notes": methodology_notes_frame(),
+        "Methodology Notes": methodology_notes_frame(context["tested_party_name"]),
     }
 
     output = BytesIO()

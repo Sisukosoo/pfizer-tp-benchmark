@@ -56,6 +56,7 @@ def run_all_scenarios(
     tested_party_df: pd.DataFrame,
     comparables_df: pd.DataFrame,
     include_fy22_adjustment: bool = False,
+    tested_party_name: str | None = None,
 ) -> list[dict[str, Any]]:
     """Run period, PLI, outlier, and optional tested-party adjustment scenarios.
 
@@ -63,12 +64,14 @@ def run_all_scenarios(
         tested_party_df: Tested-party Orbis data.
         comparables_df: Accepted comparable-company data.
         include_fy22_adjustment: Whether to include the FY22 EBIT normalization.
+        tested_party_name: Optional display name for tested-party labels.
 
     Returns:
         List of scenario records containing benchmark outputs.
     """
 
     scenarios: list[dict[str, Any]] = []
+    display_name = tested_party_name or config.tested_party_display_name()
     for scenario_name, years in PERIOD_SCENARIOS.items():
         scenarios.append(
             _scenario(
@@ -110,7 +113,7 @@ def run_all_scenarios(
         scenarios.append(
             _scenario(
                 group="Tested party adjustment",
-                name="Normalize Pfizer FY22 EBIT for restructuring charge",
+                name=f"Normalize {display_name} FY22 EBIT for restructuring charge",
                 tested_party_df=normalize_pfizer_fy22_ebit(tested_party_df),
                 comparables_df=comparables_df,
                 pli_type=config.PLI_OPERATING_MARGIN,

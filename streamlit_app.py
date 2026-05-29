@@ -391,6 +391,7 @@ def _analysis_page() -> None:
 
     st.header("Analysis")
     data_mode = _selected_data_mode()
+    tested_party_name = config.tested_party_display_name(data_mode)
 
     if not _data_files_available(data_mode):
         _show_missing_data_message()
@@ -424,16 +425,26 @@ def _analysis_page() -> None:
     )
 
     with dashboard_tab:
-        _render_executive_dashboard(tested_party, accepted_comparables, base_result)
+        _render_executive_dashboard(
+            tested_party,
+            accepted_comparables,
+            base_result,
+            tested_party_name,
+        )
 
     with base_tab:
-        _render_base_case(base_result)
+        _render_base_case(base_result, tested_party_name)
 
     with sensitivity_tab:
-        _render_sensitivity(tested_party, accepted_comparables, base_result)
+        _render_sensitivity(
+            tested_party,
+            accepted_comparables,
+            base_result,
+            tested_party_name,
+        )
 
     with methodology_tab:
-        st.markdown(_methodology_text())
+        st.markdown(_methodology_text(tested_party_name, data_mode))
 
     with detail_tab:
         _render_pli_detail(base_result)
@@ -458,6 +469,7 @@ def _report_page() -> None:
         "executive summary and a downloadable Excel workpaper."
     )
     data_mode = _selected_data_mode()
+    tested_party_name = config.tested_party_display_name(data_mode)
 
     if not _data_files_available(data_mode):
         _show_missing_data_message()
@@ -467,7 +479,12 @@ def _report_page() -> None:
         tested_party = get_tested_party(data_mode)
         raw_comparables = get_comparables(data_mode)
         decisions = load_decisions(data_mode=data_mode)
-        context = build_report_context(tested_party, raw_comparables, decisions)
+        context = build_report_context(
+            tested_party,
+            raw_comparables,
+            decisions,
+            tested_party_name=tested_party_name,
+        )
     except (FileNotFoundError, ValueError) as error:
         st.warning(str(error))
         return
@@ -515,7 +532,12 @@ def _report_page() -> None:
         )
         st.download_button(
             "Download Excel workpaper",
-            data=build_excel_report(tested_party, raw_comparables, decisions),
+            data=build_excel_report(
+                tested_party,
+                raw_comparables,
+                decisions,
+                tested_party_name=tested_party_name,
+            ),
             file_name=REPORT_FILENAME,
             mime=REPORT_MIME_TYPE,
         )
@@ -531,6 +553,7 @@ def _render_executive_dashboard(
     tested_party: pd.DataFrame,
     accepted_comparables: pd.DataFrame,
     base_result: dict[str, object],
+    tested_party_name: str,
 ) -> None:
     """Render the executive analytics dashboard."""
 
@@ -550,7 +573,7 @@ def _render_executive_dashboard(
         tested_party_trend_plot(
             _tested_party_trend_series(tested_party),
             adjusted_points=_tested_party_adjusted_points(tested_party),
-            title="Pfizer Operating Margin Trend (FY2020-FY2024)",
+            title=f"{tested_party_name} Operating Margin Trend (FY2020-FY2024)",
         ),
         use_container_width=True,
         config=PLOTLY_CONFIG,
@@ -560,6 +583,7 @@ def _render_executive_dashboard(
             base_result["comparables_detail"],
             float(base_result["tested_pli"]),
             base_result["range"],
+            tested_party_name=tested_party_name,
         ),
         use_container_width=True,
         config=PLOTLY_CONFIG,
@@ -570,10 +594,15 @@ def _render_executive_dashboard(
             tested_party_df=tested_party,
             comparables_df=accepted_comparables,
             include_fy22_adjustment=True,
+            tested_party_name=tested_party_name,
         )
     )
     st.plotly_chart(
-        sensitivity_range_plot(sensitivity_summary),
+        sensitivity_range_plot(
+            sensitivity_summary,
+            title=f"Sensitivity Ranges Compared to {tested_party_name}",
+            tested_party_name=tested_party_name,
+        ),
         use_container_width=True,
         config=PLOTLY_CONFIG,
     )
@@ -587,17 +616,18 @@ def _render_executive_dashboard(
             base_result["comparables_detail"],
             float(tested_revenue),
             float(base_result["tested_pli"]),
+            tested_party_name=tested_party_name,
         ),
         use_container_width=True,
         config=PLOTLY_CONFIG,
     )
     st.caption(
         "The revenue scatter is intentionally included as a limitation exhibit: "
-        "Pfizer is materially larger than the accepted comparable pool."
+        f"{tested_party_name} is materially larger than the accepted comparable pool."
     )
 
 
-def _render_base_case(result: dict[str, object]) -> None:
+def _render_base_case(result: dict[str, object], tested_party_name: str) -> None:
     """Render the base-case arm's-length range analysis."""
 
     st.subheader(
@@ -647,6 +677,7 @@ def _render_base_case(result: dict[str, object]) -> None:
             float(result["tested_pli"]),
             "Accepted Comparable Operating Margin Distribution",
             "Operating Margin (%)",
+            tested_party_name=tested_party_name,
         ),
         use_container_width=True,
         config=PLOTLY_CONFIG,
@@ -657,7 +688,13 @@ def _render_base_case(result: dict[str, object]) -> None:
         hide_index=True,
         use_container_width=True,
     )
-    st.info(_position_sentence(position, config.PLI_OPERATING_MARGIN))
+    st.info(
+        _position_sentence(
+            position,
+            config.PLI_OPERATING_MARGIN,
+            tested_party_name,
+        )
+    )
 
     st.dataframe(
         _benchmark_comparables_frame(
@@ -683,11 +720,12 @@ def _render_sensitivity(
     tested_party: pd.DataFrame,
     accepted_comparables: pd.DataFrame,
     base_result: dict[str, object],
+    tested_party_name: str,
 ) -> None:
     """Render benchmark sensitivity scenarios."""
 
     include_adjustment = st.checkbox(
-        "Include optional Pfizer FY22 EBIT normalization "
+        f"Include optional {tested_party_name} FY22 EBIT normalization "
         f"({config.EURO_SIGN}{config.PFIZER_FY22_RESTRUCTURING_CHARGE_EUR_K:,.0f}k)",
         value=False,
     )
@@ -695,6 +733,7 @@ def _render_sensitivity(
         tested_party_df=tested_party,
         comparables_df=accepted_comparables,
         include_fy22_adjustment=include_adjustment,
+        tested_party_name=tested_party_name,
     )
     summary = scenario_summary_frame(scenarios)
     base_position = str(base_result["position"]["position"])
@@ -735,7 +774,7 @@ def _render_pli_detail(result: dict[str, object]) -> None:
 
 
 def _tested_party_trend_series(tested_party: pd.DataFrame) -> pd.Series:
-    """Return Pfizer yearly Operating Margin in chronological order."""
+    """Return tested-party yearly Operating Margin in chronological order."""
 
     values = {}
     for year_suffix in reversed(config.YEAR_SUFFIXES):
@@ -800,7 +839,11 @@ def _benchmark_comparables_frame(
     ]
 
 
-def _position_sentence(position: dict[str, object], pli_type: str) -> str:
+def _position_sentence(
+    position: dict[str, object],
+    pli_type: str,
+    tested_party_name: str,
+) -> str:
     """Return a human-readable tested-party positioning sentence."""
 
     position_label = _position_label(str(position["position"]))
@@ -810,27 +853,35 @@ def _position_sentence(position: dict[str, object], pli_type: str) -> str:
 
     if position["position"] == "within_range":
         return (
-            f"Position: {position_label}. Pfizer is within the interquartile "
+            f"Position: {position_label}. {tested_party_name} is within the "
+            "interquartile "
             "arm's-length range; no adjustment is indicated by this test."
         )
     if position["position"] == "above_q3":
         return (
-            f"Position: {position_label}. Pfizer is {distance_text} above Q3. "
+            f"Position: {position_label}. {tested_party_name} is {distance_text} "
+            "above Q3. "
             f"Suggested adjustment direction: {direction}."
         )
     if position["position"] == "below_q1":
         return (
-            f"Position: {position_label}. Pfizer is {distance_text} below Q1. "
+            f"Position: {position_label}. {tested_party_name} is {distance_text} "
+            "below Q1. "
             f"Suggested adjustment direction: {direction}."
         )
     return "Position could not be determined due to missing data."
 
 
-def _methodology_text() -> str:
+def _methodology_text(tested_party_name: str, data_mode: str) -> str:
     """Load methodology text for the Analysis tab."""
 
     methodology_path = config.PROJECT_ROOT / "docs" / "methodology.md"
-    return methodology_path.read_text(encoding="utf-8")
+    text = methodology_path.read_text(encoding="utf-8")
+    if data_mode == config.DATA_MODE_SYNTHETIC:
+        text = text.replace("Pfizer Pharma GmbH", tested_party_name)
+        text = text.replace("Pfizer's", f"{tested_party_name}'s")
+        text = text.replace("Pfizer", tested_party_name)
+    return text
 
 
 def _about_page() -> None:
