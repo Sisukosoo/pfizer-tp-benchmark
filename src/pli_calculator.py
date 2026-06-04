@@ -293,9 +293,15 @@ def _safe_divide(numerator: pd.Series, denominator: pd.Series) -> pd.Series:
 
 
 def _normalize_orbis_percent(values: pd.Series) -> pd.Series:
-    """Convert percentage-point values to ratios while preserving ratio inputs."""
+    """Convert Orbis percentage-point values to decimal ratios.
 
-    return values.where(values.abs().le(1), values / 100)
+    Orbis stores ROCE as percentage points in the current export (for example,
+    6.49 means 6.49%), so every value is divided by 100. An earlier heuristic
+    only divided values whose absolute magnitude exceeded 1, which misread a
+    genuinely small ROCE such as 0.8 (meaning 0.8%) as 0.8 (meaning 80%).
+    """
+
+    return values / 100
 
 
 def _column(prefix: str, year_suffix: str) -> str:
