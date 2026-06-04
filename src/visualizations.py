@@ -7,6 +7,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from src import config
+from src.benchmarking import ArmsLengthRange
 
 
 def arms_length_plot(
@@ -243,7 +244,7 @@ def tested_party_trend_plot(
 def sorted_comparables_bar(
     comparables_detail: pd.DataFrame,
     tested_pli: float,
-    range_dict: dict[str, float | int],
+    range_result: ArmsLengthRange,
     title: str = "Accepted Comparables - Weighted Operating Margin",
     tested_party_name: str = config.REAL_TESTED_PARTY_DISPLAY_NAME,
 ) -> go.Figure:
@@ -252,7 +253,7 @@ def sorted_comparables_bar(
     Args:
         comparables_detail: Benchmark comparable detail table.
         tested_pli: Tested-party weighted PLI as a decimal.
-        range_dict: Arm's-length range statistics.
+        range_result: Arm's-length range statistics.
         title: Chart title.
         tested_party_name: Display name for the tested party.
 
@@ -263,15 +264,15 @@ def sorted_comparables_bar(
     display = comparables_detail.dropna(subset=["weighted_pli"]).copy()
     display = display.sort_values("weighted_pli", ascending=True)
     values = display["weighted_pli"] * 100
-    q1 = float(range_dict["q1"]) * 100
-    q3 = float(range_dict["q3"]) * 100
+    q1 = range_result.q1 * 100
+    q3 = range_result.q3 * 100
     tested_value = tested_pli * 100
     display["chart_name"] = display[config.COMPANY_NAME_COLUMN].apply(
         _short_company_name
     )
     display["iqr_status"] = display["weighted_pli"].between(
-        float(range_dict["q1"]),
-        float(range_dict["q3"]),
+        range_result.q1,
+        range_result.q3,
         inclusive="both",
     )
     colors = [
@@ -312,7 +313,7 @@ def sorted_comparables_bar(
         ("Median", "median", 1.085),
         ("Q3", "q3", 1.025),
     ]:
-        value = float(range_dict[key]) * 100
+        value = float(getattr(range_result, key)) * 100
         figure.add_vline(
             x=value,
             line_dash="dash",

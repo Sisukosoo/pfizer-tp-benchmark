@@ -82,15 +82,15 @@ def executive_conclusion(context: dict[str, Any]) -> str:
     """
 
     result = context["base_result"]
-    range_dict = result["range"]
+    range_result = result.range
     stats = context["cascade_stats"]
-    position = result["position"]["position"]
+    position = result.position.position
     conclusion = _position_phrase(str(position))
-    period = result["period_label"]
-    tested_pli = _format_percent(result["tested_pli"])
-    q1 = _format_percent(range_dict["q1"])
-    median = _format_percent(range_dict["median"])
-    q3 = _format_percent(range_dict["q3"])
+    period = result.period_label
+    tested_pli = _format_percent(result.tested_pli)
+    q1 = _format_percent(range_result.q1)
+    median = _format_percent(range_result.median)
+    q3 = _format_percent(range_result.q3)
     tested_party_name = context["tested_party_name"]
 
     sensitivity = context["sensitivity_summary"]
@@ -144,12 +144,12 @@ def overview_frame(context: dict[str, Any]) -> pd.DataFrame:
             ("Country", row.get(config.COUNTRY_COLUMN, "Germany")),
             ("NACE", nace),
             ("Characterization", "Limited-Risk Distributor with Sales and Marketing"),
-            ("Primary PLI", result["pli_label"]),
-            ("Benchmark period", result["period_label"]),
+            ("Primary PLI", result.pli_label),
+            ("Benchmark period", result.period_label),
             ("Raw candidates", stats["raw"]),
             ("Accepted comparables", stats["accepted"]),
             ("Rejected candidates", stats["rejected"]),
-            ("Base-case conclusion", _position_phrase(result["position"]["position"])),
+            ("Base-case conclusion", _position_phrase(result.position.position)),
         ],
         columns=["Item", "Value"],
     )
@@ -165,19 +165,20 @@ def range_frame(context: dict[str, Any]) -> pd.DataFrame:
         Arm's-length range metrics with raw decimal values.
     """
 
-    range_dict = context["base_result"]["range"]
+    result = context["base_result"]
+    range_result = result.range
     return pd.DataFrame(
         [
-            ("N comparables", range_dict["n"]),
-            ("Minimum", range_dict["min"]),
-            ("Q1 (25th percentile)", range_dict["q1"]),
-            ("Median", range_dict["median"]),
-            ("Q3 (75th percentile)", range_dict["q3"]),
-            ("Maximum", range_dict["max"]),
-            ("IQR width", range_dict["iqr_width"]),
+            ("N comparables", range_result.n),
+            ("Minimum", range_result.min),
+            ("Q1 (25th percentile)", range_result.q1),
+            ("Median", range_result.median),
+            ("Q3 (75th percentile)", range_result.q3),
+            ("Maximum", range_result.max),
+            ("IQR width", range_result.iqr_width),
             (
                 f"{context['tested_party_name']} weighted OM",
-                context["base_result"]["tested_pli"],
+                result.tested_pli,
             ),
         ],
         columns=["Metric", "Value"],
@@ -194,7 +195,7 @@ def accepted_comparables_frame(context: dict[str, Any]) -> pd.DataFrame:
         Accepted comparable-company table for reporting.
     """
 
-    detail = context["base_result"]["comparables_detail"].copy()
+    detail = context["base_result"].comparables_detail.copy()
     detail["Revenue EURm"] = detail[config.LATEST_REVENUE_COLUMN] / 1_000
     return detail[
         [
@@ -278,7 +279,7 @@ def sensitivity_frame(context: dict[str, Any]) -> pd.DataFrame:
     """
 
     summary = context["sensitivity_summary"].copy()
-    base_position = context["base_result"]["position"]["position"]
+    base_position = context["base_result"].position.position
     summary["Conclusion changes"] = summary["Position"] != base_position
     return summary
 

@@ -137,19 +137,18 @@ def scenario_summary_frame(scenarios: list[dict[str, Any]]) -> pd.DataFrame:
     rows = []
     for scenario in scenarios:
         result = scenario["result"]
-        range_dict = result["range"]
-        position = result["position"]
+        range_result = result.range
         rows.append(
             {
                 "Group": scenario["group"],
                 "Scenario": scenario["name"],
-                "PLI": result["pli_label"],
-                "N": range_dict["n"],
-                "Tested PLI": result["tested_pli"],
-                "Q1": range_dict["q1"],
-                "Median": range_dict["median"],
-                "Q3": range_dict["q3"],
-                "Position": position["position"],
+                "PLI": result.pli_label,
+                "N": range_result.n,
+                "Tested PLI": result.tested_pli,
+                "Q1": range_result.q1,
+                "Median": range_result.median,
+                "Q3": range_result.q3,
+                "Position": result.position.position,
             }
         )
     return pd.DataFrame(rows)

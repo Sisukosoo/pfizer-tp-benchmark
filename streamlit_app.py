@@ -9,7 +9,12 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from src import config
-from src.benchmarking import run_benchmark
+from src.benchmarking import (
+    ArmsLengthRange,
+    BenchmarkResult,
+    TestedPartyPosition,
+    run_benchmark,
+)
 from src.comparables import (
     compute_cascade_stats,
     get_accepted,
@@ -494,17 +499,17 @@ def _report_page() -> None:
         return
 
     result = context["base_result"]
-    range_dict = result["range"]
+    range_result = result.range
     st.markdown(
         _kpi_grid_html(
             [
-                ("Primary PLI", str(result["pli_label"])),
+                ("Primary PLI", str(result.pli_label)),
                 (
                     "Tested party OM",
-                    _format_pli_value(result["tested_pli"], result["pli_type"]),
+                    _format_pli_value(result.tested_pli, result.pli_type),
                 ),
-                ("IQR", _format_iqr_label(range_dict, str(result["pli_type"]))),
-                ("Conclusion", _position_label(result["position"]["position"])),
+                ("IQR", _format_iqr_label(range_result, str(result.pli_type))),
+                ("Conclusion", _position_label(result.position.position)),
             ],
             highlight_index=3,
         ),
@@ -552,7 +557,7 @@ def _report_page() -> None:
 def _render_executive_dashboard(
     tested_party: pd.DataFrame,
     accepted_comparables: pd.DataFrame,
-    base_result: dict[str, object],
+    base_result: BenchmarkResult,
     tested_party_name: str,
 ) -> None:
     """Render the executive analytics dashboard."""
@@ -580,9 +585,9 @@ def _render_executive_dashboard(
     )
     st.plotly_chart(
         sorted_comparables_bar(
-            base_result["comparables_detail"],
-            float(base_result["tested_pli"]),
-            base_result["range"],
+            base_result.comparables_detail,
+            float(base_result.tested_pli),
+            base_result.range,
             tested_party_name=tested_party_name,
         ),
         use_container_width=True,
@@ -613,9 +618,9 @@ def _render_executive_dashboard(
     )
     st.plotly_chart(
         revenue_vs_margin_scatter(
-            base_result["comparables_detail"],
+            base_result.comparables_detail,
             float(tested_revenue),
-            float(base_result["tested_pli"]),
+            float(base_result.tested_pli),
             tested_party_name=tested_party_name,
         ),
         use_container_width=True,
@@ -627,18 +632,15 @@ def _render_executive_dashboard(
     )
 
 
-def _render_base_case(result: dict[str, object], tested_party_name: str) -> None:
+def _render_base_case(result: BenchmarkResult, tested_party_name: str) -> None:
     """Render the base-case arm's-length range analysis."""
 
     st.subheader(
         "Arm's-Length Range Analysis - Operating Margin " "(FY22-FY24, 3-year weighted)"
     )
 
-    range_dict = result["range"]
-    position = result["position"]
-    if not isinstance(range_dict, dict) or not isinstance(position, dict):
-        st.warning("Benchmark result is malformed.")
-        return
+    range_result = result.range
+    position = result.position
 
     st.markdown(
         _kpi_grid_html(
@@ -646,24 +648,24 @@ def _render_base_case(result: dict[str, object], tested_party_name: str) -> None
                 (
                     "Tested party OM",
                     _format_pli_value(
-                        float(result["tested_pli"]),
+                        float(result.tested_pli),
                         config.PLI_OPERATING_MARGIN,
                     ),
                 ),
                 (
                     "Q1",
-                    _format_pli_value(range_dict["q1"], config.PLI_OPERATING_MARGIN),
+                    _format_pli_value(range_result.q1, config.PLI_OPERATING_MARGIN),
                 ),
                 (
                     "Median",
                     _format_pli_value(
-                        range_dict["median"],
+                        range_result.median,
                         config.PLI_OPERATING_MARGIN,
                     ),
                 ),
                 (
                     "Q3",
-                    _format_pli_value(range_dict["q3"], config.PLI_OPERATING_MARGIN),
+                    _format_pli_value(range_result.q3, config.PLI_OPERATING_MARGIN),
                 ),
             ],
             highlight_index=0,
@@ -673,8 +675,8 @@ def _render_base_case(result: dict[str, object], tested_party_name: str) -> None
 
     st.plotly_chart(
         arms_length_plot(
-            result["comparables_pli"],
-            float(result["tested_pli"]),
+            result.comparables_pli,
+            float(result.tested_pli),
             "Accepted Comparable Operating Margin Distribution",
             "Operating Margin (%)",
             tested_party_name=tested_party_name,
@@ -684,7 +686,7 @@ def _render_base_case(result: dict[str, object], tested_party_name: str) -> None
     )
 
     st.dataframe(
-        _range_summary_frame(range_dict, config.PLI_OPERATING_MARGIN),
+        _range_summary_frame(range_result, config.PLI_OPERATING_MARGIN),
         hide_index=True,
         use_container_width=True,
     )
@@ -698,7 +700,7 @@ def _render_base_case(result: dict[str, object], tested_party_name: str) -> None
 
     st.dataframe(
         _benchmark_comparables_frame(
-            result["comparables_detail"],
+            result.comparables_detail,
             config.PLI_OPERATING_MARGIN,
         ),
         hide_index=True,
@@ -719,7 +721,7 @@ def _render_base_case(result: dict[str, object], tested_party_name: str) -> None
 def _render_sensitivity(
     tested_party: pd.DataFrame,
     accepted_comparables: pd.DataFrame,
-    base_result: dict[str, object],
+    base_result: BenchmarkResult,
     tested_party_name: str,
 ) -> None:
     """Render benchmark sensitivity scenarios."""
@@ -736,7 +738,7 @@ def _render_sensitivity(
         tested_party_name=tested_party_name,
     )
     summary = scenario_summary_frame(scenarios)
-    base_position = str(base_result["position"]["position"])
+    base_position = str(base_result.position.position)
     summary["Conclusion changes"] = summary["Position"] != base_position
     display = summary.copy()
     for column in ["Tested PLI", "Q1", "Median", "Q3"]:
@@ -751,11 +753,11 @@ def _render_sensitivity(
     st.dataframe(display, hide_index=True, use_container_width=True)
 
 
-def _render_pli_detail(result: dict[str, object]) -> None:
+def _render_pli_detail(result: BenchmarkResult) -> None:
     """Render per-comparable yearly PLI detail."""
 
-    detail = result["yearly_comparables_pli"].copy()
-    pli_type = str(result["pli_type"])
+    detail = result.yearly_comparables_pli.copy()
+    pli_type = str(result.pli_type)
     display = detail.copy()
     value_columns = [
         column
@@ -796,19 +798,19 @@ def _tested_party_adjusted_points(tested_party: pd.DataFrame) -> dict[str, float
 
 
 def _range_summary_frame(
-    range_dict: dict[str, object],
+    range_result: ArmsLengthRange,
     pli_type: str,
 ) -> pd.DataFrame:
     """Return a formatted arm's-length range summary table."""
 
     rows = [
-        ("N comparables", f"{int(range_dict['n']):,}"),
-        ("Minimum", _format_pli_value(range_dict["min"], pli_type)),
-        ("Q1 (25th percentile)", _format_pli_value(range_dict["q1"], pli_type)),
-        ("Median", _format_pli_value(range_dict["median"], pli_type)),
-        ("Q3 (75th percentile)", _format_pli_value(range_dict["q3"], pli_type)),
-        ("Maximum", _format_pli_value(range_dict["max"], pli_type)),
-        ("IQR width", _format_pli_spread(range_dict["iqr_width"], pli_type)),
+        ("N comparables", f"{int(range_result.n):,}"),
+        ("Minimum", _format_pli_value(range_result.min, pli_type)),
+        ("Q1 (25th percentile)", _format_pli_value(range_result.q1, pli_type)),
+        ("Median", _format_pli_value(range_result.median, pli_type)),
+        ("Q3 (75th percentile)", _format_pli_value(range_result.q3, pli_type)),
+        ("Maximum", _format_pli_value(range_result.max, pli_type)),
+        ("IQR width", _format_pli_spread(range_result.iqr_width, pli_type)),
     ]
     return pd.DataFrame(rows, columns=["Metric", "Value"])
 
@@ -840,30 +842,30 @@ def _benchmark_comparables_frame(
 
 
 def _position_sentence(
-    position: dict[str, object],
+    position: TestedPartyPosition,
     pli_type: str,
     tested_party_name: str,
 ) -> str:
     """Return a human-readable tested-party positioning sentence."""
 
-    position_label = _position_label(str(position["position"]))
-    distance = float(position["distance_to_range"])
-    direction = str(position["adjustment_direction"])
+    position_label = _position_label(str(position.position))
+    distance = float(position.distance_to_range)
+    direction = str(position.adjustment_direction)
     distance_text = _format_pli_spread(abs(distance), pli_type)
 
-    if position["position"] == "within_range":
+    if position.position == "within_range":
         return (
             f"Position: {position_label}. {tested_party_name} is within the "
             "interquartile "
             "arm's-length range; no adjustment is indicated by this test."
         )
-    if position["position"] == "above_q3":
+    if position.position == "above_q3":
         return (
             f"Position: {position_label}. {tested_party_name} is {distance_text} "
             "above Q3. "
             f"Suggested adjustment direction: {direction}."
         )
-    if position["position"] == "below_q1":
+    if position.position == "below_q1":
         return (
             f"Position: {position_label}. {tested_party_name} is {distance_text} "
             "below Q1. "
@@ -1184,12 +1186,12 @@ def _format_pli_spread(value: object, pli_type: str) -> str:
     return f"{numeric_value:.2f}x"
 
 
-def _format_iqr_label(range_dict: dict[str, object], pli_type: str) -> str:
+def _format_iqr_label(range_result: ArmsLengthRange, pli_type: str) -> str:
     """Format Q1-Q3 as a compact Streamlit metric label."""
 
     return (
-        f"{_format_pli_value(range_dict['q1'], pli_type)} - "
-        f"{_format_pli_value(range_dict['q3'], pli_type)}"
+        f"{_format_pli_value(range_result.q1, pli_type)} - "
+        f"{_format_pli_value(range_result.q3, pli_type)}"
     )
 
 

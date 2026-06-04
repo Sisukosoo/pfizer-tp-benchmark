@@ -30,7 +30,7 @@ def test_build_report_context_accepts_decision_pool(
     )
 
     assert len(context["accepted"]) == 3
-    assert context["base_result"]["range"]["n"] == 3
+    assert context["base_result"].range.n == 3
     assert "arm's-length range" in executive_conclusion(context)
 
 

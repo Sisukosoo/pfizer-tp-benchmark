@@ -5,6 +5,7 @@ from __future__ import annotations
 import pandas as pd
 
 from src import config
+from src.benchmarking import ArmsLengthRange
 from src.visualizations import (
     revenue_vs_margin_scatter,
     sensitivity_range_plot,
@@ -45,7 +46,15 @@ def test_sorted_comparables_bar_adds_pfizer_reference_line(
     figure = sorted_comparables_bar(
         detail,
         tested_pli=0.055,
-        range_dict={"q1": 0.045, "median": 0.05, "q3": 0.055},
+        range_result=ArmsLengthRange(
+            n=3,
+            min=0.04,
+            q1=0.045,
+            median=0.05,
+            q3=0.055,
+            max=0.06,
+            iqr_width=0.01,
+        ),
     )
 
     assert len(figure.data) == 1
