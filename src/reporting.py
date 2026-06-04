@@ -12,6 +12,9 @@ from openpyxl.utils import get_column_letter
 from src import config
 from src.benchmarking import run_benchmark
 from src.comparables import compute_cascade_stats, get_accepted, get_rejected
+from src.formatting import format_nace as _format_nace
+from src.formatting import format_percent as _format_percent
+from src.formatting import position_phrase as _position_phrase
 from src.pli_calculator import yearly_pli_table
 from src.sensitivity import run_all_scenarios, scenario_summary_frame
 
@@ -452,36 +455,3 @@ def _format_percent_columns(worksheet: Any) -> None:
             ):
                 for value_cell in row_cell:
                     value_cell.number_format = "0.00%"
-
-
-def _format_percent(value: object) -> str:
-    """Format a decimal PLI as a percent string."""
-
-    if pd.isna(value):
-        return "n/a"
-    return f"{float(value) * 100:.2f}%"
-
-
-def _format_nace(value: object) -> str:
-    """Format NACE code for reporting."""
-
-    if pd.isna(value):
-        return "n/a"
-    try:
-        code = f"{int(float(value)):04d}"
-    except (TypeError, ValueError):
-        code = str(value)
-    description = config.NACE_DESCRIPTIONS.get(code)
-    return f"{code} - {description}" if description else code
-
-
-def _position_phrase(position: object) -> str:
-    """Return a human-readable conclusion phrase."""
-
-    labels = {
-        "below_q1": "below the arm's-length range",
-        "within_range": "within the arm's-length range",
-        "above_q3": "above the arm's-length range",
-        "not_available": "not available",
-    }
-    return labels.get(str(position), str(position))

@@ -26,6 +26,10 @@ from src.comparables import (
     save_decisions,
 )
 from src.data_loader import load_comparables, load_tested_party
+from src.formatting import format_nace as _format_nace
+from src.formatting import format_pli_spread as _format_pli_spread
+from src.formatting import format_pli_value as _format_pli_value
+from src.formatting import position_label as _position_label
 from src.pli_calculator import operating_margin
 from src.reporting import (
     DECISIONS_FILENAME,
@@ -1148,44 +1152,6 @@ def _format_revenue_millions(value: object) -> str:
         return str(value)
 
 
-def _format_nace(value: object) -> str:
-    """Format a NACE core code with its configured description."""
-
-    if pd.isna(value):
-        return "n/a"
-    try:
-        code = f"{int(float(value)):04d}"
-    except (TypeError, ValueError):
-        code = str(value).strip()
-
-    description = config.NACE_DESCRIPTIONS.get(code)
-    if description is None:
-        return code
-    return f"{code} - {description}"
-
-
-def _format_pli_value(value: object, pli_type: str) -> str:
-    """Format a PLI value for display."""
-
-    if pd.isna(value):
-        return "n/a"
-    numeric_value = float(value)
-    if config.PLI_PERCENT_FORMAT.get(pli_type, False):
-        return f"{numeric_value * 100:.2f}%"
-    return f"{numeric_value:.2f}x"
-
-
-def _format_pli_spread(value: object, pli_type: str) -> str:
-    """Format a PLI distance or range width."""
-
-    if pd.isna(value):
-        return "n/a"
-    numeric_value = float(value)
-    if config.PLI_PERCENT_FORMAT.get(pli_type, False):
-        return f"{numeric_value * 100:.2f} pp"
-    return f"{numeric_value:.2f}x"
-
-
 def _format_iqr_label(range_result: ArmsLengthRange, pli_type: str) -> str:
     """Format Q1-Q3 as a compact Streamlit metric label."""
 
@@ -1193,18 +1159,6 @@ def _format_iqr_label(range_result: ArmsLengthRange, pli_type: str) -> str:
         f"{_format_pli_value(range_result.q1, pli_type)} - "
         f"{_format_pli_value(range_result.q3, pli_type)}"
     )
-
-
-def _position_label(position: str) -> str:
-    """Return a human-readable position label."""
-
-    labels = {
-        "below_q1": "Below Q1",
-        "within_range": "Within range",
-        "above_q3": "Above Q3",
-        "not_available": "Not available",
-    }
-    return labels.get(position, position)
 
 
 def _pli_type_from_label(label: str) -> str:
